@@ -307,6 +307,19 @@ footer::before {
   .tag:hover, .tag-yellow:hover { transform: none; }
 }
 
+/* ═══ UNDERGROUND THEME SKIN (earthy mine warmth) ══════════════════════ */
+html[data-theme='underground'] body {
+  background-image:
+    radial-gradient(ellipse 100% 60% at 50% 0%, rgba(99,102,241,0.16) 0%, transparent 65%),
+    radial-gradient(ellipse 60% 40% at 90% 80%, rgba(217,119,6,0.07) 0%, transparent 60%),
+    radial-gradient(ellipse 70% 50% at 10% 90%, rgba(120,72,20,0.06) 0%, transparent 60%);
+}
+html[data-theme='underground'] .gate-label { color: #fbbf24; text-shadow: 0 2px 14px rgba(0,0,0,0.95); }
+html[data-theme='underground'] .gate-line {
+  background: linear-gradient(90deg, transparent, rgba(217,119,6,0.65), rgba(99,102,241,0.55), transparent) !important;
+}
+html[data-theme='underground'] .ambient-blob-2 { background: radial-gradient(circle, rgba(217,119,6,0.16), transparent 70%); }
+
 /* ═══ OCEAN THEME SKIN (html[data-theme='ocean']) ═══════════════════════ */
 html[data-theme='ocean'] body {
   background-image:

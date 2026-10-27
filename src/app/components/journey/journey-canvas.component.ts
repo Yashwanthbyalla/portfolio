@@ -195,10 +195,69 @@ export class JourneyCanvasComponent implements AfterViewInit, OnDestroy {
       const px = mode === 'desktop' ? 6.5 : mode === 'tablet' ? 8.5 : 5.5;
       const py = mode === 'desktop' ? 4.2 : 8.4;
       const ps = mode === 'desktop' ? 1 : 0.62;
-      this.surfacePortal.position.set(px, py, -15);
-      this.surfaceRing.position.set(px, py, -15);
+      this.surfacePortal.position.set(px, py, -9);
+      this.surfaceRing.position.set(px, py, -9);
       this.surfacePortal.scale.setScalar(ps);
       this.surfaceRing.scale.setScalar(ps);
+    }
+  }
+
+  // ── Underground realism helpers ───────────────────────────────────────
+  private rockTexture(): THREE.CanvasTexture {
+    const tex = this.skinTexture((ctx, w, h) => {
+      const bands = ['#6f5b45', '#7d6750', '#5d4c3a', '#86755e', '#66543f', '#75614c'];
+      let y = 0;
+      let bi = 0;
+      while (y < h) {
+        const bh = 18 + ((bi * 37) % 30);
+        ctx.fillStyle = bands[bi % bands.length];
+        ctx.fillRect(0, y, w, bh);
+        y += bh; bi++;
+      }
+      for (let i = 0; i < 5200; i++) {
+        ctx.fillStyle = Math.random() > 0.5 ? 'rgba(0,0,0,0.16)' : 'rgba(255,240,214,0.10)';
+        ctx.fillRect(Math.random() * w, Math.random() * h, 1.6, 1.6);
+      }
+      ctx.strokeStyle = 'rgba(20,14,8,0.35)'; ctx.lineWidth = 1.4;
+      for (let i = 0; i < 26; i++) {
+        ctx.beginPath();
+        let x = Math.random() * w, yy = Math.random() * h;
+        ctx.moveTo(x, yy);
+        for (let k = 0; k < 4; k++) { x += (Math.random() - 0.5) * 46; yy += Math.random() * 26; ctx.lineTo(x, yy); }
+        ctx.stroke();
+      }
+    });
+    tex.repeat.set(6, 22);
+    return tex;
+  }
+
+  private rockMat(color = 0x77644e): THREE.MeshStandardMaterial {
+    return new THREE.MeshStandardMaterial({ color, roughness: 1, metalness: 0.02, flatShading: true });
+  }
+
+  /** Cave dressing for a chamber: rock floor, boulders, hanging stalactites. */
+  private addCavern(g: THREE.Group, seed = 1): void {
+    const floor = new THREE.Mesh(new THREE.CircleGeometry(13, 36), this.rockMat(0x4a3d2f));
+    floor.rotation.x = -Math.PI / 2;
+    floor.position.set(0, -6.4, -4);
+    g.add(floor);
+    const rockGeo = new THREE.DodecahedronGeometry(1, 0);
+    for (let i = 0; i < 9; i++) {
+      const rock = new THREE.Mesh(rockGeo, this.rockMat(i % 2 ? 0x5d4c3a : 0x6d5942));
+      const a = ((i + seed) / 9) * Math.PI * 2;
+      rock.position.set(Math.cos(a) * (6.5 + (i % 3) * 1.8), -6 + (i % 2) * 0.3, -4 + Math.sin(a) * 5);
+      rock.scale.set(0.7 + (i % 4) * 0.45, 0.55 + (i % 3) * 0.3, 0.7 + ((i + 2) % 4) * 0.4);
+      rock.rotation.set(i * 1.3, i * 2.1, seed);
+      g.add(rock);
+    }
+    const spikeGeo = new THREE.ConeGeometry(0.42, 2.6, 6);
+    for (let i = 0; i < 8; i++) {
+      const spike = new THREE.Mesh(spikeGeo, this.rockMat(0x63523d));
+      const a = ((i * 1.7 + seed) % 8) / 8 * Math.PI * 2;
+      spike.position.set(Math.cos(a) * (4 + (i % 4) * 1.6), 6.8 - (i % 3) * 0.5, -4 + Math.sin(a) * 4.5);
+      spike.rotation.x = Math.PI; // point down
+      spike.scale.setScalar(0.7 + (i % 3) * 0.45);
+      g.add(spike);
     }
   }
 
@@ -207,7 +266,7 @@ export class JourneyCanvasComponent implements AfterViewInit, OnDestroy {
   private buildSurface(): void {
     const g = new THREE.Group();
     const portal = new THREE.Mesh(new THREE.TorusGeometry(4.6, 0.1, 16, 90), this.mat(0x6366f1, 0x6366f1, 1.1));
-    portal.position.set(6.5, 4.2, -15);
+    portal.position.set(6.5, 4.2, -9);
     g.add(portal);
     this.surfacePortal = portal;
     const inner = new THREE.Mesh(new THREE.TorusGeometry(3.8, 0.045, 12, 80), this.mat(0x22d3ee, 0x22d3ee, 1.2));
@@ -223,44 +282,140 @@ export class JourneyCanvasComponent implements AfterViewInit, OnDestroy {
       s.rotation.set(i, i * 1.3, 0);
       g.add(s);
     }
-    // Ground disc the hero stands on
+    // Earth the hero stands on: soil disc + dark shaft mouth
     const ground = new THREE.Mesh(
-      new THREE.CircleGeometry(16, 48),
-      new THREE.MeshStandardMaterial({ color: 0x0d0e22, roughness: 0.9, metalness: 0.2, transparent: true, opacity: 0.85 }),
+      new THREE.CircleGeometry(17, 48),
+      new THREE.MeshStandardMaterial({ map: this.rockTexture(), color: 0x8a6f52, roughness: 1, transparent: true, opacity: 0.92 }),
     );
     ground.rotation.x = -Math.PI / 2;
     ground.position.y = -1.4;
     g.add(ground);
-    const grid = new THREE.PolarGridHelper(16, 12, 6, 48, 0x6366f1, 0x1e1b4b);
-    (grid.material as THREE.Material).transparent = true;
-    (grid.material as THREE.Material).opacity = 0.32;
-    grid.position.y = -1.35;
-    g.add(grid);
+    const mouth = new THREE.Mesh(new THREE.CircleGeometry(7.2, 40),
+      new THREE.MeshBasicMaterial({ color: 0x070503, transparent: true, opacity: 0.88 }));
+    mouth.rotation.x = -Math.PI / 2;
+    mouth.position.set(0, -1.34, -3);
+    g.add(mouth);
+    // Rock rim around the entrance
+    const rimGeo = new THREE.DodecahedronGeometry(1, 0);
+    for (let i = 0; i < 14; i++) {
+      const rock = new THREE.Mesh(rimGeo, this.rockMat(i % 2 ? 0x77644e : 0x5f5040));
+      const a = (i / 14) * Math.PI * 2;
+      rock.position.set(Math.cos(a) * 8.6, -1.1 + (i % 2) * 0.2, -3 + Math.sin(a) * 7.6);
+      rock.scale.set(0.9 + (i % 4) * 0.4, 0.6 + (i % 3) * 0.3, 0.9 + ((i + 1) % 3) * 0.35);
+      rock.rotation.set(i * 0.8, i * 1.9, i * 0.4);
+      g.add(rock);
+    }
+    // Roots dangling into the shaft mouth
+    const rootMat = new THREE.MeshStandardMaterial({ color: 0x4f3a22, roughness: 1 });
+    for (let i = 0; i < 7; i++) {
+      const a = (i / 7) * Math.PI * 2 + 0.4;
+      const sx = Math.cos(a) * 6.8, sz = -3 + Math.sin(a) * 6;
+      const curve = new THREE.CatmullRomCurve3([
+        new THREE.Vector3(sx, -1.2, sz),
+        new THREE.Vector3(sx * 0.92, -2.8 - (i % 3), sz * 0.92),
+        new THREE.Vector3(sx * 0.8 + (i % 2 ? 0.5 : -0.5), -4.6 - (i % 4), sz * 0.8),
+      ]);
+      const root = new THREE.Mesh(new THREE.TubeGeometry(curve, 10, 0.075 - (i % 3) * 0.016, 5), rootMat);
+      g.add(root);
+    }
     this.addZone(g, 0, 0.12);
   }
 
-  /** The Descent Shaft: strata walls + guidance rings the camera falls past. */
+  /** The Descent Shaft: a real rock tunnel you fall through. */
   private buildShaft(): void {
     const g = new THREE.Group();
-    const ringGeo = new THREE.TorusGeometry(10.5, 0.055, 8, 64);
-    const strataColors = [0x6366f1, 0x0ea5e9, 0x8b5cf6, 0x334155, 0x4f46e5, 0x155e75];
-    for (let i = 0; i < 30; i++) {
-      const y = -6 - i * 5.6;
-      const ring = new THREE.Mesh(ringGeo, this.mat(strataColors[i % strataColors.length], strataColors[i % strataColors.length], 0.55));
-      ring.rotation.x = Math.PI / 2;
-      ring.position.y = y;
-      g.add(ring);
-      // rock strata slabs jutting from the walls
-      for (let j = 0; j < 3; j++) {
-        const slab = new THREE.Mesh(
-          new THREE.BoxGeometry(3.4 + ((i + j) % 3), 0.9, 2.1),
-          this.mat(0x171833, strataColors[(i + j) % strataColors.length], 0.18),
-        );
-        const side = (i + j) % 2 === 0 ? -1 : 1;
-        slab.position.set(side * (14 + ((i * j) % 3)), y - 2.2, -10 + ((i * 2 + j * 3) % 7));
-        slab.rotation.y = side * 0.35;
-        g.add(slab);
+
+    // Rock tunnel wall (inside-out cylinder) with vertex-displaced rock
+    const wallGeo = new THREE.CylinderGeometry(13, 13, 182, 56, 72, true);
+    const wpos = wallGeo.attributes['position'] as THREE.BufferAttribute;
+    for (let i = 0; i < wpos.count; i++) {
+      const x = wpos.getX(i), y = wpos.getY(i), z = wpos.getZ(i);
+      const ang = Math.atan2(z, x);
+      const bump = Math.sin(ang * 7 + y * 0.32) * 0.55 + Math.sin(ang * 13 - y * 0.75) * 0.38 + Math.sin(ang * 29 + y * 1.6) * 0.22;
+      const r = 13 + bump;
+      wpos.setXYZ(i, Math.cos(ang) * r, y, Math.sin(ang) * r);
+    }
+    wallGeo.computeVertexNormals();
+    const wall = new THREE.Mesh(wallGeo, new THREE.MeshStandardMaterial({
+      map: this.rockTexture(), color: 0xa89880, roughness: 1, metalness: 0, side: THREE.BackSide,
+    }));
+    wall.position.y = -90; // rim sits just below ground level (top edge ≈ y +1)
+    g.add(wall);
+
+    // Sediment strata rings hugging the wall
+    const strata = [0x8a6f4d, 0x5f7a72, 0x7a5a68, 0x96835f, 0x64707c, 0x87714f];
+    for (let i = 0; i < 16; i++) {
+      const band = new THREE.Mesh(new THREE.TorusGeometry(12.55, 0.22 + (i % 3) * 0.1, 7, 56),
+        this.rockMat(strata[i % strata.length]));
+      band.rotation.x = Math.PI / 2;
+      band.position.y = -8 - i * 10.5;
+      g.add(band);
+    }
+
+    // Rock spikes jutting inward from the walls
+    const spikeGeo = new THREE.ConeGeometry(0.5, 2.4, 6);
+    const spikeMat = this.rockMat(0x6b5942);
+    const up = new THREE.Vector3(0, 1, 0);
+    for (let i = 0; i < 64; i++) {
+      const spike = new THREE.Mesh(spikeGeo, spikeMat);
+      const a = (i * 2.399) % (Math.PI * 2); // golden-angle spread
+      const y = -6 - ((i * 37) % 158);
+      spike.position.set(Math.cos(a) * 11.9, y, Math.sin(a) * 11.9);
+      const dir = new THREE.Vector3(-Math.cos(a), -0.25, -Math.sin(a)).normalize();
+      spike.quaternion.setFromUnitVectors(up, dir);
+      spike.scale.setScalar(0.7 + ((i * 7) % 10) / 8);
+      g.add(spike);
+    }
+
+    // Wooden mine-timber frames + hanging lanterns
+    const woodMat = new THREE.MeshStandardMaterial({ color: 0x6e4f30, roughness: 0.95, metalness: 0 });
+    const woodDark = new THREE.MeshStandardMaterial({ color: 0x54391f, roughness: 1, metalness: 0 });
+    const lanternGlass = new THREE.MeshBasicMaterial({ color: 0xffc266 });
+    for (let k = 0; k < 10; k++) {
+      const y = -12 - k * 16.5;
+      const frame = new THREE.Group();
+      for (const s of [-1, 1]) {
+        const post = new THREE.Mesh(new THREE.BoxGeometry(0.62, 8.6, 0.62), woodMat);
+        post.position.set(s * 7.1, 0, 0);
+        post.rotation.z = s * -0.05;
+        frame.add(post);
+        const brace = new THREE.Mesh(new THREE.BoxGeometry(0.34, 3.6, 0.34), woodDark);
+        brace.position.set(s * 5.6, 2.6, 0);
+        brace.rotation.z = s * 0.8;
+        frame.add(brace);
       }
+      const beam = new THREE.Mesh(new THREE.BoxGeometry(15.2, 0.68, 0.68), woodMat);
+      beam.position.y = 4.1;
+      frame.add(beam);
+      // Hanging lantern (lit every frame, light every 3rd)
+      const lx = k % 2 === 0 ? -4.6 : 4.6;
+      const chain = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 1, 5), woodDark);
+      chain.position.set(lx, 3.55, 0);
+      frame.add(chain);
+      const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.24, 10, 8), lanternGlass);
+      lamp.position.set(lx, 2.95, 0);
+      frame.add(lamp);
+      const cage = new THREE.Mesh(new THREE.TorusGeometry(0.3, 0.035, 6, 14), woodDark);
+      cage.position.copy(lamp.position);
+      frame.add(cage);
+      if (k % 3 === 0) {
+        const light = new THREE.PointLight(0xffa640, 42, 27, 1.7);
+        light.position.copy(lamp.position);
+        frame.add(light);
+      }
+      frame.position.set(0, y, -6.5);
+      g.add(frame);
+    }
+
+    // Rubble boulders scattered deeper down
+    const rubbleGeo = new THREE.DodecahedronGeometry(1, 0);
+    for (let i = 0; i < 22; i++) {
+      const rock = new THREE.Mesh(rubbleGeo, this.rockMat(i % 2 ? 0x5d4c3a : 0x6d5942));
+      const a = (i * 2.7) % (Math.PI * 2);
+      rock.position.set(Math.cos(a) * (8.5 + (i % 4)), -14 - ((i * 53) % 148), Math.sin(a) * 8.5 - 3);
+      rock.scale.setScalar(0.6 + ((i * 11) % 10) / 7);
+      rock.rotation.set(i, i * 1.7, i * 0.6);
+      g.add(rock);
     }
     this.addZone(g, 0, 0);
   }
@@ -279,6 +434,7 @@ export class JourneyCanvasComponent implements AfterViewInit, OnDestroy {
     }
     const light = new THREE.PointLight(0x6366f1, 90, 42, 1.7);
     g.add(light);
+    this.addCavern(g, 1);
     this.addZone(g, y, 0.35);
   }
 
@@ -308,24 +464,42 @@ export class JourneyCanvasComponent implements AfterViewInit, OnDestroy {
     );
     g.add(line);
     g.add(new THREE.PointLight(0xf59e0b, 70, 40, 1.7));
+    this.addCavern(g, 3);
     this.addZone(g, y, 0.06);
   }
 
-  /** Chapter 4 — Crystal Cave (Skills): emissive crystal cluster. */
+  /** Chapter 4 — Crystal Cave (Skills): faceted crystals growing from rock. */
   private buildCrystalCave(y: number): void {
     const g = new THREE.Group();
     const colors = [0x22d3ee, 0x818cf8, 0xa78bfa, 0x67e8f9];
-    const geo = new THREE.ConeGeometry(0.6, 3.1, 6);
+    // Elongated octahedron = natural crystal point with pyramidal tip
+    const geo = new THREE.OctahedronGeometry(0.62, 0);
+    geo.scale(1, 2.6, 1);
+    const baseGeo = new THREE.DodecahedronGeometry(1, 0);
     for (let i = 0; i < 26; i++) {
-      const c = new THREE.Mesh(geo, this.mat(colors[i % colors.length], colors[i % colors.length], 0.85 + (i % 3) * 0.25));
+      const col = colors[i % colors.length];
+      const c = new THREE.Mesh(geo, new THREE.MeshPhysicalMaterial({
+        color: col, emissive: col, emissiveIntensity: 0.5,
+        roughness: 0.12, metalness: 0, clearcoat: 1, clearcoatRoughness: 0.12,
+        transparent: true, opacity: 0.88, flatShading: true,
+      }));
       const a = (i / 26) * Math.PI * 2;
       const r = 3.6 + (i % 5) * 1.25;
-      c.position.set(Math.cos(a) * r, -4.2 + (i % 4) * 0.4, Math.sin(a) * r - 2);
-      c.rotation.set(((i % 5) - 2) * 0.1, i, ((i % 3) - 1) * 0.14);
-      c.scale.setScalar(0.65 + ((i * 7) % 10) / 9);
+      const cx = Math.cos(a) * r, cz = Math.sin(a) * r - 2;
+      c.position.set(cx, -4.4 + (i % 4) * 0.35, cz);
+      c.rotation.set(((i % 5) - 2) * 0.16, i, ((i % 3) - 1) * 0.2);
+      c.scale.setScalar(0.6 + ((i * 7) % 10) / 9);
       g.add(c);
+      if (i % 2 === 0) {
+        const base = new THREE.Mesh(baseGeo, this.rockMat(0x55452f));
+        base.position.set(cx, -5.6, cz);
+        base.scale.set(1.1, 0.6, 1.1);
+        base.rotation.y = i;
+        g.add(base);
+      }
     }
     g.add(new THREE.PointLight(0x22d3ee, 95, 46, 1.6));
+    this.addCavern(g, 5);
     this.addZone(g, y, 0.05);
   }
 
@@ -352,6 +526,17 @@ export class JourneyCanvasComponent implements AfterViewInit, OnDestroy {
     vaultRing.rotation.x = Math.PI / 2;
     g.add(vaultRing);
     g.add(new THREE.PointLight(0xa855f7, 90, 46, 1.6));
+    this.addCavern(g, 7);
+    // Stone pillars holding the vault up
+    const pillarMat = this.rockMat(0x6a5942);
+    for (const px of [-8.5, 8.5]) {
+      const pillar = new THREE.Mesh(new THREE.CylinderGeometry(0.85, 1.05, 13, 8), pillarMat);
+      pillar.position.set(px, 0, -5);
+      g.add(pillar);
+      const capital = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.7, 2.4), pillarMat);
+      capital.position.set(px, 6.4, -5);
+      g.add(capital);
+    }
     this.addZone(g, y, 0.14);
   }
 
@@ -1149,7 +1334,10 @@ export class JourneyCanvasComponent implements AfterViewInit, OnDestroy {
       this.camZ - Math.sin(this.progress * Math.PI) * 2.4,
     );
     this.camera.lookAt(this.mouseX * 2.4, camY - 5.4 + this.mouseY * -0.7, -2);
-    if (this.headlamp) this.headlamp.intensity = 55 + Math.sin(t * 2.1) * 7;
+    if (this.headlamp) {
+      const base = this.themeService.theme() === 'ocean' ? 55 : 74;
+      this.headlamp.intensity = base + Math.sin(t * 2.1) * 7; // lamp flicker
+    }
 
     // Zones: idle spin + brighten/scale up as the camera approaches
     for (const z of this.zones) {
@@ -1169,10 +1357,13 @@ export class JourneyCanvasComponent implements AfterViewInit, OnDestroy {
       if (this.undergroundWorld) this.undergroundWorld.visible = !ocean;
       if (this.oceanWorld) this.oceanWorld.visible = ocean;
       if (this.scene?.fog instanceof THREE.FogExp2) {
-        this.scene.fog.color.set(ocean ? 0x03263d : 0x05050d);
-        this.scene.fog.density = ocean ? 0.011 : 0.0145;
+        this.scene.fog.color.set(ocean ? 0x03263d : 0x0b0705);
+        this.scene.fog.density = ocean ? 0.011 : 0.0155;
       }
-      if (this.headlamp) this.headlamp.color.set(ocean ? 0x7dd3fc : 0x818cf8);
+      if (this.headlamp) {
+        this.headlamp.color.set(ocean ? 0x7dd3fc : 0xffc98a); // miner's lamp warmth underground
+        this.headlamp.intensity = ocean ? 60 : 78;
+      }
     }
     if (theme === 'ocean') {
       for (const swim of this.swimmers) swim(t);
