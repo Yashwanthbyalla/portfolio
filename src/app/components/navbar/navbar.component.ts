@@ -1,0 +1,44 @@
+import { Component, HostListener, signal } from '@angular/core';
+import { NAV_ITEMS } from '../../data/portfolio.data';
+
+@Component({
+  selector: 'app-navbar',
+  standalone: true,
+  templateUrl: './navbar.component.html',
+  styleUrl: './navbar.component.scss',
+})
+export class NavbarComponent {
+  readonly navItems = NAV_ITEMS;
+  isScrolled = signal(false);
+  isMobileOpen = signal(false);
+  activeSection = signal('home');
+
+  @HostListener('window:scroll')
+  onScroll(): void {
+    this.isScrolled.set(window.scrollY > 50);
+    this.updateActiveSection();
+  }
+
+  toggleMobile(): void {
+    this.isMobileOpen.update((v) => !v);
+  }
+
+  closeMobile(): void {
+    this.isMobileOpen.set(false);
+  }
+
+  private updateActiveSection(): void {
+    const sections = this.navItems.map((item) => item.href.replace('#', ''));
+    for (const id of [...sections].reverse()) {
+      const el = document.getElementById(id);
+      if (el) {
+        const rect = el.getBoundingClientRect();
+        if (rect.top <= 150) {
+          this.activeSection.set(id);
+          return;
+        }
+      }
+    }
+    this.activeSection.set('home');
+  }
+}

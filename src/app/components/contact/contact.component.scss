@@ -1,0 +1,24 @@
+.field-group {
+  @apply flex flex-col gap-1.5;
+
+  label { @apply text-gray-400 text-xs sm:text-sm font-medium; }
+
+  input, textarea {
+    @apply w-full px-4 py-3 rounded-xl text-white text-sm
+           bg-white/5 border border-white/10
+           placeholder-gray-600
+           focus:outline-none focus:border-primary-400/50 focus:ring-2 focus:ring-primary-500/20
+           transition-all duration-200;
+    background: rgba(19,20,42,0.5);
+  }
+  textarea { resize: vertical; min-height: 110px; }
+}
+
+.field-error { @apply text-red-400 text-xs mt-0.5; }
+
+.social-link {
+  @apply w-10 h-10 rounded-xl flex items-center justify-center
+         text-gray-400 bg-white/5 border border-white/10
+         hover:bg-primary-500/20 hover:border-primary-400/40 hover:text-white
+         hover:scale-110 transition-all duration-200;
+}

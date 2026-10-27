@@ -1,0 +1,140 @@
+.hero {
+  background: #0a0b14;
+}
+
+/* Grid dot background */
+.hero-grid {
+  background-image:
+    radial-gradient(circle at 1px 1px, rgba(255,255,255,0.04) 1px, transparent 0);
+  background-size: 36px 36px;
+}
+
+/* Soft glowing orbs */
+.hero-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  pointer-events: none;
+  animation: floatSlow 7s ease-in-out infinite;
+}
+.hero-orb-1 {
+  width: 480px; height: 480px;
+  top: -15%; left: 55%;
+  background: radial-gradient(circle, rgba(99,102,241,0.22) 0%, transparent 70%);
+  animation-delay: 0s;
+}
+.hero-orb-2 {
+  width: 360px; height: 360px;
+  bottom: -10%; left: -5%;
+  background: radial-gradient(circle, rgba(6,182,212,0.14) 0%, transparent 70%);
+  animation-delay: 3s;
+}
+.hero-orb-3 {
+  width: 260px; height: 260px;
+  top: 40%; right: 5%;
+  background: radial-gradient(circle, rgba(139,92,246,0.12) 0%, transparent 70%);
+  animation-delay: 1.5s;
+}
+
+@keyframes floatSlow {
+  0%,100% { transform: translateY(0) scale(1); }
+  50%     { transform: translateY(-24px) scale(1.04); }
+}
+
+/* Particles */
+.particle {
+  background: rgba(99,102,241,0.45);
+  animation: particleDrift var(--dur, 8s) ease-in-out infinite;
+}
+@keyframes particleDrift {
+  0%,100% { transform: translate(0,0) scale(1); opacity: 0.3; }
+  33%     { transform: translate(8px,-16px) scale(1.2); opacity: 0.6; }
+  66%     { transform: translate(-10px,-8px) scale(0.8); opacity: 0.4; }
+}
+
+/* Hero lines animation */
+.hero-badge {
+  opacity: 0;
+  transform: translateY(20px);
+  animation: heroLineIn 0.7s cubic-bezier(0.16,1,0.3,1) 0s forwards;
+}
+.hero-line {
+  opacity: 0;
+  transform: translateY(24px);
+  animation: heroLineIn 0.7s cubic-bezier(0.16,1,0.3,1) 0.1s forwards;
+}
+@keyframes heroLineIn {
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Social icons */
+.social-icon {
+  @apply w-9 h-9 rounded-lg flex items-center justify-center
+         text-gray-400 bg-white/5 border border-white/10
+         hover:text-white hover:bg-primary-500/20 hover:border-primary-400/40
+         hover:scale-110 transition-all duration-200;
+}
+
+/* Profile card */
+.profile-card {
+  width: 340px;
+  position: relative;
+  overflow: visible !important;
+  animation: cardFadeIn 1s cubic-bezier(0.16,1,0.3,1) 0.4s both;
+}
+@keyframes cardFadeIn {
+  from { opacity: 0; transform: translateY(30px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.avatar {
+  background: linear-gradient(135deg, #6366f1 0%, #22d3ee 100%);
+}
+.avatar-ring {
+  background: transparent;
+  border: 2px solid rgba(99,102,241,0.4);
+  animation: ringPulse 3s ease-in-out infinite;
+}
+@keyframes ringPulse {
+  0%,100% { transform: scale(1); opacity: 0.6; }
+  50%     { transform: scale(1.08); opacity: 1; }
+}
+
+/* Floating icons around the card */
+.float-icon {
+  animation: floatIcon 6s ease-in-out infinite;
+  opacity: 0.8;
+  filter: drop-shadow(0 0 8px rgba(99,102,241,0.5));
+
+  &[data-i='0'] { top: -16px; left: -20px; }
+  &[data-i='1'] { top: -18px; right: -16px; }
+  &[data-i='2'] { bottom: 60px; left: -22px; }
+  &[data-i='3'] { bottom: 60px; right: -20px; }
+  &[data-i='4'] { bottom: -16px; left: 50%; transform: translateX(-50%); }
+  &[data-i='5'] { top: 50%; left: -24px; transform: translateY(-50%); }
+}
+@keyframes floatIcon {
+  0%,100% { transform: translate(0,0) rotate(0deg) scale(1); }
+  25%     { transform: translate(4px,-8px) rotate(8deg) scale(1.1); }
+  75%     { transform: translate(-4px,6px) rotate(-6deg) scale(0.95); }
+}
+
+/* Scroll cue */
+.scroll-cue {
+  animation: scrollFade 3s ease-in-out infinite;
+}
+.scroll-line {
+  width: 1px;
+  height: 40px;
+  background: linear-gradient(to bottom, rgba(99,102,241,0.8), transparent);
+  animation: scrollLine 2s ease-in-out infinite;
+}
+@keyframes scrollLine {
+  0%   { transform: scaleY(0); transform-origin: top; }
+  50%  { transform: scaleY(1); transform-origin: top; }
+  100% { transform: scaleY(0); transform-origin: bottom; }
+}
+@keyframes scrollFade {
+  0%,100% { opacity: 0.4; }
+  50%     { opacity: 0.9; }
+}

@@ -1,0 +1,16 @@
+.code-body {
+  background: transparent;
+  /* Let the pre expand to its natural content width instead of squishing */
+  white-space: pre;
+  word-break: normal;
+  overflow-wrap: normal;
+}
+
+::ng-deep .code-body {
+  .kw   { color: #c792ea; }
+  .str  { color: #c3e88d; }
+  .var  { color: #82aaff; }
+  .punc { color: #89ddff; }
+  .key  { color: #f78c6c; }
+  .num  { color: #f78c6c; }
+}

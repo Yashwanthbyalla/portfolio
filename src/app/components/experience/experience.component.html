@@ -1,0 +1,88 @@
+<section id="experience" class="relative">
+  <!-- Subtle section bg -->
+  <div class="absolute inset-0 bg-gradient-to-b from-transparent via-dark-850/40 to-transparent pointer-events-none"></div>
+
+  <div class="section-wrap section-py relative z-10">
+
+    <div appScrollReveal class="mb-12 sm:mb-16">
+      <p class="section-eyebrow">✦ Work Experience</p>
+      <h2 class="section-title">My <span class="grad">Professional Journey</span></h2>
+      <div class="divider"></div>
+    </div>
+
+    <!-- Summary row -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-14">
+      @for (s of experience.summary; track s.label; let i = $index) {
+        <div class="card p-4 sm:p-5 text-center" appScrollReveal [delay]="i * 80">
+          <p class="font-bold text-2xl sm:text-3xl grad mb-1">{{ s.value }}</p>
+          <p class="text-gray-500 text-xs sm:text-sm">{{ s.label }}</p>
+        </div>
+      }
+    </div>
+
+    <!-- Timeline -->
+    <div class="relative">
+      <!-- line -->
+      <div class="tl-line absolute left-5 md:left-1/2 top-0 bottom-0 w-px"
+           style="background: linear-gradient(to bottom, #6366f1, #22d3ee, #6366f1); opacity: 0.35;"></div>
+
+      @for (job of experience.items; track job.company; let i = $index) {
+        <div class="tl-item relative flex md:gap-8 mb-8 md:mb-10" appScrollReveal [delay]="i * 100">
+
+          <!-- Dot -->
+          <div class="tl-dot absolute left-5 md:left-1/2 top-6 w-3 h-3 rounded-full bg-primary-500 -translate-x-1/2 z-10 ring-4 ring-dark-900"
+               style="box-shadow: 0 0 12px rgba(99,102,241,0.7);"></div>
+
+          <!-- Card — mobile: offset from line; desktop: alternating sides -->
+          <div class="ml-14 md:ml-0 w-full md:w-[calc(50%-2rem)]"
+               [class.md:mr-auto]="i % 2 === 0"
+               [class.md:ml-auto]="i % 2 !== 0">
+            <button class="card w-full text-left p-5 sm:p-6 block"
+                    [class.ring-1]="isExpanded(i)"
+                    [class.ring-primary-500]="isExpanded(i)"
+                    (click)="toggle(i)">
+              <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                  <p class="text-xs text-gray-500 mb-1">{{ job.period }}</p>
+                  <h3 class="font-display font-bold text-white text-base sm:text-lg truncate">{{ job.company }}</h3>
+                  <p class="text-primary-400 text-sm font-medium mt-0.5">{{ job.role }}</p>
+                </div>
+                <svg class="w-4 h-4 text-gray-500 flex-shrink-0 mt-2 transition-transform duration-300"
+                     [class.rotate-180]="isExpanded(i)"
+                     fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </div>
+
+              @if (isExpanded(i)) {
+                <div class="expand-body mt-4 pt-4 border-t border-white/8 space-y-4">
+                  @if (job.tool) {
+                    <p class="text-accent-400 text-xs font-semibold">📦 {{ job.tool }}</p>
+                  }
+                  <ul class="space-y-1.5">
+                    @for (h of job.highlights; track h) {
+                      <li class="text-gray-300 text-xs sm:text-sm flex gap-2 items-start leading-relaxed">
+                        <span class="text-primary-400 flex-shrink-0 mt-0.5">▸</span>{{ h }}
+                      </li>
+                    }
+                  </ul>
+                  <div class="flex flex-wrap gap-1.5">
+                    @for (t of job.tech; track t) { <span class="tag">{{ t }}</span> }
+                  </div>
+                  @if (job.awards?.length) {
+                    <div>
+                      <p class="text-yellow-400 text-xs font-semibold mb-2">🏆 Awards</p>
+                      <div class="flex flex-wrap gap-1.5">
+                        @for (a of job.awards; track a) { <span class="tag-yellow">{{ a }}</span> }
+                      </div>
+                    </div>
+                  }
+                </div>
+              }
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+</section>

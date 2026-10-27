@@ -1,0 +1,174 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── Google Fonts ───────────────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700;800&display=swap');
+
+/* ─── Base ───────────────────────────────────────────────────────────── */
+@layer base {
+  *, *::before, *::after { box-sizing: border-box; }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply bg-dark-900 text-gray-100 font-sans overflow-x-hidden;
+    background-image:
+      radial-gradient(ellipse 100% 60% at 50% 0%, rgba(99,102,241,0.18) 0%, transparent 65%),
+      radial-gradient(ellipse 60% 40% at 90% 80%, rgba(6,182,212,0.08) 0%, transparent 60%);
+    background-attachment: fixed;
+    min-height: 100vh;
+  }
+
+  ::selection { @apply bg-primary-500/40 text-white; }
+
+  ::-webkit-scrollbar        { width: 6px; }
+  ::-webkit-scrollbar-track  { background: #0a0b14; }
+  ::-webkit-scrollbar-thumb  { @apply bg-primary-600/70 rounded-full; }
+  ::-webkit-scrollbar-thumb:hover { @apply bg-primary-500; }
+}
+
+/* ─── Components ─────────────────────────────────────────────────────── */
+@layer components {
+
+  /* Layout */
+  .section-wrap {
+    @apply max-w-6xl mx-auto px-5 sm:px-8 lg:px-10;
+  }
+  .section-py {
+    @apply py-16 sm:py-24 lg:py-32;
+  }
+
+  /* Headings */
+  .section-eyebrow {
+    @apply inline-flex items-center gap-2 text-xs sm:text-sm font-semibold tracking-widest
+           uppercase text-primary-400 mb-4;
+  }
+  .section-title {
+    @apply font-display font-bold text-white
+           text-2xl sm:text-3xl md:text-4xl lg:text-5xl leading-tight mb-4;
+  }
+  .section-subtitle {
+    @apply text-gray-400 text-base sm:text-lg leading-relaxed mb-10 sm:mb-14;
+  }
+
+  /* Gradient text */
+  .grad {
+    @apply bg-gradient-to-r from-primary-400 via-accent-400 to-primary-300
+           bg-clip-text text-transparent;
+    background-size: 200% 200%;
+  }
+
+  /* Glass card */
+  .card {
+    background: rgba(19, 20, 42, 0.7);
+    border: 1px solid rgba(255,255,255,0.08);
+    @apply rounded-2xl backdrop-blur-xl shadow-card;
+    transition: border-color 0.3s, box-shadow 0.3s, transform 0.3s;
+  }
+  .card:hover {
+    border-color: rgba(99,102,241,0.3);
+    @apply shadow-card-hover;
+  }
+
+  /* Buttons */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 font-semibold rounded-xl
+           transition-all duration-300 select-none;
+  }
+  .btn-primary {
+    @apply btn px-6 py-3 text-sm sm:text-base text-white
+           bg-gradient-to-r from-primary-500 to-primary-600
+           shadow-glow-sm;
+    &:hover { @apply scale-[1.04] shadow-glow; background-image: linear-gradient(to right, #818cf8, #6366f1); }
+    &:active { @apply scale-95; }
+  }
+  .btn-ghost {
+    @apply btn px-6 py-3 text-sm sm:text-base text-gray-200
+           border border-white/15 bg-white/5 backdrop-blur-sm;
+    &:hover { @apply bg-white/10 border-primary-400/40 text-white scale-[1.04]; }
+    &:active { @apply scale-95; }
+  }
+
+  /* Tech tag */
+  .tag {
+    @apply text-xs px-2.5 py-1 rounded-full font-medium
+           bg-primary-500/15 text-primary-300 border border-primary-500/20;
+  }
+  .tag-yellow {
+    @apply text-xs px-2.5 py-1 rounded-full font-medium
+           bg-yellow-500/10 text-yellow-300 border border-yellow-500/20;
+  }
+
+  /* Divider line */
+  .divider {
+    @apply w-12 h-1 rounded-full bg-gradient-to-r from-primary-500 to-accent-400 mb-6;
+  }
+
+  /* Scroll reveal */
+  .reveal {
+    opacity: 0;
+    transform: translateY(28px);
+    transition: opacity 0.65s cubic-bezier(0.16,1,0.3,1),
+                transform 0.65s cubic-bezier(0.16,1,0.3,1);
+  }
+  .reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .reveal-left {
+    opacity: 0;
+    transform: translateY(28px);
+    transition: opacity 0.65s cubic-bezier(0.16,1,0.3,1),
+                transform 0.65s cubic-bezier(0.16,1,0.3,1);
+  }
+  .reveal-left.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .reveal-right {
+    opacity: 0;
+    transform: translateY(28px);
+    transition: opacity 0.65s cubic-bezier(0.16,1,0.3,1),
+                transform 0.65s cubic-bezier(0.16,1,0.3,1);
+  }
+  .reveal-right.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  @media (min-width: 768px) {
+    .reveal-left  { transform: translateX(-30px); }
+    .reveal-left.visible  { transform: translateX(0); }
+    .reveal-right { transform: translateX(30px); }
+    .reveal-right.visible { transform: translateX(0); }
+  }
+}
+
+/* ─── Cursor blink ───────────────────────────────────────────────────── */
+.type-cursor {
+  display: inline-block;
+  width: 2px;
+  height: 1.1em;
+  background: #22d3ee;
+  margin-left: 2px;
+  vertical-align: middle;
+  border-radius: 1px;
+  animation: blink 1s step-end infinite;
+}
+@keyframes blink {
+  0%,100% { opacity: 1; }
+  50%     { opacity: 0; }
+}
+
+/* ─── Scrollbar on filter row ────────────────────────────────────────── */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* ─── Skill bar animation ────────────────────────────────────────────── */
+.skill-bar {
+  transition: width 1.4s cubic-bezier(0.4,0,0.2,1);
+}

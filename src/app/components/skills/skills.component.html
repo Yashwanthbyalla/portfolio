@@ -1,0 +1,44 @@
+<section id="skills" class="relative">
+  <div class="section-wrap section-py">
+
+    <div appScrollReveal class="mb-12 sm:mb-16">
+      <p class="section-eyebrow">✦ Tech Stack</p>
+      <h2 class="section-title">Technologies I <span class="grad">Work With</span></h2>
+      <div class="divider"></div>
+    </div>
+
+    <div class="grid sm:grid-cols-2 gap-4 mb-10" appScrollReveal (revealed)="onReveal()">
+      @for (skill of skills.items; track skill.name; let i = $index) {
+        <div class="card p-4 sm:p-5" appScrollReveal [delay]="i * 50">
+          <div class="flex justify-between items-center mb-3">
+            <span class="font-semibold text-white text-sm sm:text-base">{{ skill.name }}</span>
+            <span class="text-primary-400 font-mono text-xs sm:text-sm tabular-nums">{{ skill.level }}%</span>
+          </div>
+          <div class="h-1.5 rounded-full bg-white/10 overflow-hidden">
+            <div class="skill-bar h-full rounded-full"
+                 [style.width.%]="animated() ? skill.level : 0"
+                 [style.transitionDelay]="i * 70 + 'ms'"
+                 style="background: linear-gradient(90deg, #6366f1, #22d3ee);">
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- Currently learning -->
+    <div class="card p-5 sm:p-7" appScrollReveal [delay]="160">
+      <h3 class="font-semibold text-white text-sm sm:text-base mb-4 flex items-center gap-2">
+        <span class="text-xl">📚</span> Currently Learning
+      </h3>
+      <div class="flex flex-wrap gap-2 sm:gap-3">
+        @for (t of skills.learning; track t) {
+          <span class="px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-medium
+                       border border-accent-500/25 bg-accent-500/10 text-accent-300
+                       hover:border-accent-400/50 hover:scale-105 transition-all duration-200 cursor-default">
+            {{ t }}
+          </span>
+        }
+      </div>
+    </div>
+  </div>
+</section>

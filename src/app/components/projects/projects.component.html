@@ -1,0 +1,57 @@
+<section id="projects" class="relative">
+  <div class="absolute inset-0 bg-gradient-to-b from-transparent via-dark-850/40 to-transparent pointer-events-none"></div>
+  <div class="section-wrap section-py relative z-10">
+
+    <div appScrollReveal class="mb-10 sm:mb-14">
+      <p class="section-eyebrow">✦ Personal Achievements</p>
+      <h2 class="section-title">Showcasing My <span class="grad">Creative Journey</span></h2>
+      <div class="divider"></div>
+    </div>
+
+    <!-- Category filters — scrollable on mobile -->
+    <div class="flex flex-nowrap sm:flex-wrap gap-2 overflow-x-auto no-scrollbar pb-1 mb-8 sm:mb-10" appScrollReveal [delay]="80">
+      @for (cat of projects.categories; track cat) {
+        <button class="filter-btn flex-shrink-0"
+                [class.filter-active]="activeCategory() === cat"
+                (click)="setCategory(cat)">
+          {{ getCategoryIcon(cat) }} {{ cat }}
+        </button>
+      }
+    </div>
+
+    <!-- Grid -->
+    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+      @for (p of filteredProjects(); track p.id; let i = $index) {
+        <article class="card p-5 flex flex-col group" appScrollReveal [delay]="(i % 6) * 60">
+          <div class="flex items-start justify-between mb-3 gap-2">
+            <span class="text-xs px-2 py-0.5 rounded bg-white/8 text-gray-400 border border-white/8">
+              {{ p.category }}
+            </span>
+            <span class="text-xl opacity-50 group-hover:opacity-100 group-hover:scale-110 transition-all flex-shrink-0">
+              {{ getCategoryIcon(p.category) }}
+            </span>
+          </div>
+          <h3 class="font-semibold text-white text-sm sm:text-base mb-2 group-hover:text-primary-300 transition-colors leading-snug">
+            {{ p.title }}
+          </h3>
+          <p class="text-gray-400 text-xs sm:text-sm leading-relaxed flex-grow mb-4">{{ p.description }}</p>
+          @if (p.tech?.length) {
+            <div class="flex flex-wrap gap-1.5 mb-3">
+              @for (t of p.tech; track t) { <span class="tag">{{ t }}</span> }
+            </div>
+          }
+          @if (p.link) {
+            <a [href]="p.link" target="_blank" rel="noopener"
+               class="inline-flex items-center gap-1 text-xs font-semibold text-accent-400 hover:text-accent-300 mt-auto transition-colors">
+              {{ p.linkLabel }}
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+              </svg>
+            </a>
+          }
+        </article>
+      }
+    </div>
+  </div>
+</section>
