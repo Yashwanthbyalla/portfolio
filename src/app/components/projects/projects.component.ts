@@ -23,16 +23,21 @@ export class ProjectsComponent {
     this.activeCategory.set(category);
   }
 
+  getCategoryCount(category: ProjectCategory): number {
+    if (category === 'All') return this.projects.items.length;
+    return this.projects.items.filter((p) => p.category === category).length;
+  }
+
   getCategoryIcon(category: ProjectCategory): string {
     const icons: Record<string, string> = {
       'Mobile Apps': '📱',
-      Extensions: '🧩',
-      Themes: '🎨',
+      'Extensions': '🧩',
+      'Themes': '🎨',
       'NPM Libraries': '📦',
       'VS Code Extensions': '💻',
       'Snapchat Lenses': '👻',
-      Research: '📄',
-      All: '✨',
+      'Research Papers': '📄',
+      'All': '✨',
     };
     return icons[category] ?? '✨';
   }

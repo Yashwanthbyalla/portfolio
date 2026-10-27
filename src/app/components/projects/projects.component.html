@@ -15,6 +15,7 @@
                 [class.filter-active]="activeCategory() === cat"
                 (click)="setCategory(cat)">
           {{ getCategoryIcon(cat) }} {{ cat }}
+          <span class="filter-count">{{ getCategoryCount(cat) }}</span>
         </button>
       }
     </div>

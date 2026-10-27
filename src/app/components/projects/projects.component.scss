@@ -1,9 +1,17 @@
 .filter-btn {
-  @apply px-3 py-1.5 rounded-xl text-xs sm:text-sm font-medium transition-all duration-200
+  @apply inline-flex items-center px-3 py-1.5 rounded-xl text-xs sm:text-sm font-medium transition-all duration-200
          bg-white/5 border border-white/10 text-gray-400
          hover:bg-white/10 hover:text-white hover:border-white/20;
 }
 .filter-active {
   @apply bg-primary-500/20 border-primary-400/40 text-white;
   box-shadow: 0 0 12px rgba(99,102,241,0.25);
+}
+.filter-count {
+  @apply inline-flex items-center justify-center ml-1.5 min-w-5 h-5 px-1 rounded-full
+         text-[10px] sm:text-[11px] font-semibold leading-none
+         bg-white/10 text-gray-300 border border-white/10;
+}
+.filter-active .filter-count {
+  @apply bg-primary-400/30 text-white border-primary-300/40;
 }
