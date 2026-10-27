@@ -1,6 +1,7 @@
-import { Component, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { EXPERIENCE } from '../../data/portfolio.data';
 import { ScrollRevealDirective } from '../../directives/scroll-reveal.directive';
+import { ThemeService } from '../../services/theme.service';
 
 @Component({
   selector: 'app-experience',
@@ -10,6 +11,7 @@ import { ScrollRevealDirective } from '../../directives/scroll-reveal.directive'
   styleUrl: './experience.component.scss',
 })
 export class ExperienceComponent {
+  readonly themeService = inject(ThemeService);
   readonly experience = EXPERIENCE;
   expandedIndex = signal<number | null>(0);
 

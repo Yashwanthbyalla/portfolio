@@ -2,14 +2,14 @@
   <div class="section-wrap section-py">
 
     <div appScrollReveal class="mb-12 sm:mb-16">
-      <p class="section-eyebrow">✦ Tech Stack</p>
+      <p class="section-eyebrow">{{ themeService.theme() === 'ocean' ? '🪼 Chapter 03 · 900m — Deep Sea · Tech Stack' : '💎 Chapter 03 · 900m — Crystal Cave · Tech Stack' }}</p>
       <h2 class="section-title">Technologies I <span class="grad">Work With</span></h2>
       <div class="divider"></div>
     </div>
 
     <div class="grid sm:grid-cols-2 gap-4 mb-10" appScrollReveal (revealed)="onReveal()">
       @for (skill of skills.items; track skill.name; let i = $index) {
-        <div class="card p-4 sm:p-5" appScrollReveal [delay]="i * 50">
+        <div class="card skill-card p-4 sm:p-5" appScrollReveal [delay]="i * 50">
           <div class="flex justify-between items-center mb-3">
             <span class="font-semibold text-white text-sm sm:text-base">{{ skill.name }}</span>
             <span class="text-primary-400 font-mono text-xs sm:text-sm tabular-nums">{{ skill.level }}%</span>

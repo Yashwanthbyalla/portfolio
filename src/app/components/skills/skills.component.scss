@@ -1,6 +1,13 @@
 .skill-item:hover {
   box-shadow: 0 0 25px rgba(99, 102, 241, 0.15);
 }
+.skill-card { transition: transform 0.35s cubic-bezier(0.16,1,0.3,1), border-color 0.3s, box-shadow 0.3s; }
+.skill-card:hover {
+  box-shadow: 0 12px 34px rgba(0,0,0,0.45), 0 0 24px rgba(99,102,241,0.18);
+}
+.skill-card:hover .skill-bar {
+  box-shadow: 0 0 12px rgba(34,211,238,0.55);
+}
 
 .skill-bar-fill {
   transition: width 1.2s cubic-bezier(0.4, 0, 0.2, 1);

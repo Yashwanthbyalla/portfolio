@@ -5,7 +5,7 @@
   <div class="section-wrap section-py relative z-10">
 
     <div appScrollReveal class="mb-12 sm:mb-16">
-      <p class="section-eyebrow">✦ Work Experience</p>
+      <p class="section-eyebrow">{{ themeService.theme() === 'ocean' ? '🌿 Chapter 02 · 600m — Kelp Forest · Experience' : '🕰️ Chapter 02 · 600m — Timeline Cavern · Experience' }}</p>
       <h2 class="section-title">My <span class="grad">Professional Journey</span></h2>
       <div class="divider"></div>
     </div>
@@ -24,6 +24,7 @@
     <div class="relative">
       <!-- line -->
       <div class="tl-line absolute left-5 md:left-1/2 top-0 bottom-0 w-px"
+           appScrollReveal animationClass="reveal-line"
            style="background: linear-gradient(to bottom, #6366f1, #22d3ee, #6366f1); opacity: 0.35;"></div>
 
       @for (job of experience.items; track job.company; let i = $index) {

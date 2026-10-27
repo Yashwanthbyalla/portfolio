@@ -1,4 +1,5 @@
-<section id="home" class="hero relative min-h-screen flex items-center overflow-hidden">
+<section id="home" class="hero relative min-h-screen flex items-center overflow-hidden"
+         (mousemove)="onHeroMouseMove($event)" (mouseleave)="onHeroMouseLeave($event)">
 
   <!-- Background layers -->
   <div class="hero-grid absolute inset-0 pointer-events-none"></div>
@@ -72,8 +73,9 @@
         </div>
       </div>
 
-      <!-- Right: visual card -->
-      <div class="hidden lg:flex justify-center items-center">
+      <!-- Right: visual card (below intro on mobile/tablet) -->
+      <div class="flex justify-center items-center mt-4 lg:mt-0">
+        <div class="tilt-wrap" (mousemove)="onCardMove($event)" (mouseleave)="onCardLeave($event)">
         <div class="profile-card card p-8 relative">
           <!-- Avatar circle -->
           <div class="avatar-wrap mx-auto mb-6 relative">
@@ -114,13 +116,14 @@
             }
           </div>
         </div>
+        </div>
       </div>
     </div>
 
     <!-- Scroll cue -->
     <div class="scroll-cue absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2">
       <div class="scroll-line"></div>
-      <span class="text-gray-600 text-xs tracking-widest uppercase">scroll</span>
+      <span class="text-gray-500 text-xs tracking-widest uppercase">Scroll to descend · 0m</span>
     </div>
   </div>
 </section>

@@ -15,3 +15,25 @@
 .filter-active .filter-count {
   @apply bg-primary-400/30 text-white border-primary-300/40;
 }
+.filter-btn:active { transform: scale(0.96); }
+.filter-active { animation: chipPop 0.35s cubic-bezier(0.34,1.56,0.64,1); }
+@keyframes chipPop {
+  0% { transform: scale(0.94); }
+  60% { transform: scale(1.04); }
+  100% { transform: scale(1); }
+}
+/* Mobile/tablet: filter row scrolls edge-to-edge with a soft fade hint */
+@media (max-width: 1023.98px) {
+  section#projects .flex.flex-nowrap {
+    margin-left: -0.25rem; margin-right: -0.25rem;
+    padding-left: 0.25rem; padding-right: 0.75rem;
+    scroll-snap-type: x proximity;
+    -webkit-overflow-scrolling: touch;
+  }
+  section#projects .filter-btn { scroll-snap-align: start; min-height: 38px; }
+  article.card { padding: 1.1rem; }
+}
+
+/* Project cards: category icon swings in on hover, link arrow slides */
+article.card { transition: transform 0.35s cubic-bezier(0.16,1,0.3,1), border-color 0.3s, box-shadow 0.3s; }
+article.card:hover { transform: translateY(-6px); }

@@ -1,4 +1,6 @@
 <nav class="fixed top-0 inset-x-0 z-50 transition-all duration-500" [class.nav-solid]="isScrolled()">
+  <!-- Reading progress -->
+  <div class="scroll-progress" [style.width.%]="scrollProgress()" aria-hidden="true"></div>
   <div class="section-wrap">
     <div class="flex items-center justify-between h-16 md:h-[72px]">
 
@@ -9,7 +11,7 @@
       </a>
 
       <!-- Desktop nav -->
-      <div class="hidden md:flex items-center gap-1">
+      <div class="hidden lg:flex items-center gap-1">
         @for (item of navItems; track item.href) {
           <a
             [href]="item.href"
@@ -21,13 +23,23 @@
         }
       </div>
 
-      <!-- CTA + hamburger -->
-      <div class="flex items-center gap-3">
-        <a href="#contact" class="hidden md:inline-flex btn btn-primary !py-2 !px-5 !text-sm">
+      <!-- Theme switcher + CTA + hamburger -->
+      <div class="flex items-center gap-2 sm:gap-3">
+        <button
+          type="button"
+          class="theme-switch"
+          (click)="themeService.toggle()"
+          [attr.aria-label]="themeService.theme() === 'underground' ? 'Switch to Ocean theme' : 'Switch to Underground theme'"
+          [title]="themeService.theme() === 'underground' ? 'Switch to Ocean theme' : 'Switch to Underground theme'"
+        >
+          <span class="theme-switch-icon">{{ themeService.theme() === 'underground' ? '🌊' : '🌌' }}</span>
+          <span class="theme-switch-label hidden sm:inline">{{ themeService.theme() === 'underground' ? 'Ocean' : 'Underground' }}</span>
+        </button>
+        <a href="#contact" class="hidden lg:inline-flex btn btn-primary !py-2 !px-5 !text-sm">
           Hire Me
         </a>
         <button
-          class="md:hidden w-9 h-9 flex items-center justify-center rounded-lg text-gray-300 hover:bg-white/10 transition-colors"
+          class="lg:hidden w-9 h-9 flex items-center justify-center rounded-lg text-gray-300 hover:bg-white/10 transition-colors"
           (click)="toggleMobile()"
           aria-label="Toggle menu"
         >
@@ -45,7 +57,7 @@
 
   <!-- Mobile drawer -->
   @if (isMobileOpen()) {
-    <div class="md:hidden mobile-drawer border-t border-white/8">
+    <div class="lg:hidden mobile-drawer border-t border-white/8">
       <div class="section-wrap py-4 space-y-1">
         @for (item of navItems; track item.href) {
           <a

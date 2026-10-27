@@ -1,6 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { ABOUT, getAboutStats } from '../../data/portfolio.data';
 import { ScrollRevealDirective } from '../../directives/scroll-reveal.directive';
+import { ThemeService } from '../../services/theme.service';
 
 @Component({
   selector: 'app-about',
@@ -10,6 +11,7 @@ import { ScrollRevealDirective } from '../../directives/scroll-reveal.directive'
   styleUrl: './about.component.scss',
 })
 export class AboutComponent {
+  readonly themeService = inject(ThemeService);
   readonly about = ABOUT;
   readonly stats = getAboutStats();
   copied = false;

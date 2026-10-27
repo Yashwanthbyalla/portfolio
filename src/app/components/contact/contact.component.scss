@@ -16,6 +16,26 @@
 
 .field-error { @apply text-red-400 text-xs mt-0.5; }
 
+/* Contact info cards: icon tile wiggles on hover */
+a.card > div:first-child { transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.3s; }
+a.card:hover > div:first-child {
+  transform: translateY(-3px) rotate(-6deg) scale(1.08);
+  box-shadow: 0 0 18px rgba(99,102,241,0.35);
+}
+/* Inputs glow softly when focused */
+.field-group input:focus, .field-group textarea:focus {
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.12), 0 0 22px rgba(99,102,241,0.12);
+  transform: translateY(-1px);
+}
+
+/* Mobile/tablet: 16px inputs prevent iOS auto-zoom; roomier tap targets */
+@media (max-width: 1023.98px) {
+  .field-group input, .field-group textarea { font-size: 16px; padding: 0.85rem 1rem; }
+  .field-group textarea { min-height: 130px; }
+  a.card { padding: 1rem; }
+  .social-link { width: 44px; height: 44px; }
+}
+
 .social-link {
   @apply w-10 h-10 rounded-xl flex items-center justify-center
          text-gray-400 bg-white/5 border border-white/10

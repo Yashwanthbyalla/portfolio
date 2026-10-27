@@ -1,5 +1,6 @@
 .hero {
-  background: #0a0b14;
+  background: transparent;
+  text-shadow: 0 2px 18px rgba(0,0,0,0.55);
 }
 
 /* Grid dot background */
@@ -22,18 +23,30 @@
   top: -15%; left: 55%;
   background: radial-gradient(circle, rgba(99,102,241,0.22) 0%, transparent 70%);
   animation-delay: 0s;
+  translate: calc(var(--mx, 0) * 22px) calc(var(--my, 0) * 22px);
 }
 .hero-orb-2 {
   width: 360px; height: 360px;
   bottom: -10%; left: -5%;
   background: radial-gradient(circle, rgba(6,182,212,0.14) 0%, transparent 70%);
   animation-delay: 3s;
+  translate: calc(var(--mx, 0) * -30px) calc(var(--my, 0) * -18px);
 }
 .hero-orb-3 {
   width: 260px; height: 260px;
   top: 40%; right: 5%;
   background: radial-gradient(circle, rgba(139,92,246,0.12) 0%, transparent 70%);
   animation-delay: 1.5s;
+  translate: calc(var(--mx, 0) * 14px) calc(var(--my, 0) * -14px);
+}
+.hero-orb { transition: translate 0.7s cubic-bezier(0.16,1,0.3,1); }
+
+/* 3D tilt wrapper for the profile card */
+.tilt-wrap {
+  transform: perspective(1000px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+  transition: transform 0.45s cubic-bezier(0.16,1,0.3,1);
+  transform-style: preserve-3d;
+  will-change: transform;
 }
 
 @keyframes floatSlow {
@@ -117,6 +130,45 @@
   0%,100% { transform: translate(0,0) rotate(0deg) scale(1); }
   25%     { transform: translate(4px,-8px) rotate(8deg) scale(1.1); }
   75%     { transform: translate(-4px,6px) rotate(-6deg) scale(0.95); }
+}
+
+/* ─── Mobile & tablet (below lg): centered, compact hero ─────────────── */
+@media (max-width: 1023.98px) {
+  .hero .section-wrap { padding-top: 6.5rem; }
+  /* Center the intro column */
+  .hero .grid > div:first-child {
+    display: flex; flex-direction: column; align-items: center; text-align: center;
+    min-width: 0;
+  }
+  .hero .grid { grid-template-columns: minmax(0, 1fr); }
+  .hero .grid > div { min-width: 0; }
+  .hero h1 {
+    width: 100%;
+    font-size: clamp(2rem, 7.2vw, 3.1rem) !important;
+    line-height: 1.12;
+    white-space: normal;
+  }
+  .hero .grid > div:first-child p { width: 100%; }
+  .hero .grid > div:first-child p { margin-left: auto; margin-right: auto; }
+  .hero .grid > div:first-child .flex.items-center.gap-4 { justify-content: center; }
+  /* CTA row centered; buttons keep comfortable tap size */
+  .hero .grid > div:first-child .flex.flex-col { align-items: stretch; }
+  @media (min-width: 640px) {
+    .hero .grid > div:first-child .flex.sm\:flex-row { justify-content: center; }
+  }
+  /* Profile card fits the viewport */
+  .profile-card { width: min(340px, calc(100vw - 3rem)); padding: 1.5rem; }
+  .float-icon { font-size: 1rem; }
+  /* Smaller, softer orbs so they frame instead of flooding the screen */
+  .hero-orb-1 { width: 280px; height: 280px; }
+  .hero-orb-2 { width: 220px; height: 220px; }
+  .hero-orb-3 { width: 170px; height: 170px; }
+  /* Scroll cue sits above the fixed mobile journey HUD */
+  .scroll-cue { bottom: 5.5rem; }
+}
+@media (max-width: 639.98px) {
+  .hero h1 { font-size: 2.35rem; line-height: 1.12; }
+  .scroll-cue span { font-size: 10px; }
 }
 
 /* Scroll cue */

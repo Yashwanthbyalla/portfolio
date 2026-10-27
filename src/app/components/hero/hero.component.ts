@@ -12,6 +12,38 @@ import { TypewriterComponent } from '../typewriter/typewriter.component';
 export class HeroComponent {
   readonly hero = HERO;
 
+  /** Mouse parallax: expose normalized -1..1 offsets as CSS vars on the hero section. */
+  onHeroMouseMove(event: MouseEvent): void {
+    const el = event.currentTarget as HTMLElement;
+    const rect = el.getBoundingClientRect();
+    const x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    const y = ((event.clientY - rect.top) / rect.height) * 2 - 1;
+    el.style.setProperty('--mx', x.toFixed(3));
+    el.style.setProperty('--my', y.toFixed(3));
+  }
+
+  onHeroMouseLeave(event: MouseEvent): void {
+    const el = event.currentTarget as HTMLElement;
+    el.style.setProperty('--mx', '0');
+    el.style.setProperty('--my', '0');
+  }
+
+  /** 3D tilt for the profile card wrapper. */
+  onCardMove(event: MouseEvent): void {
+    const el = event.currentTarget as HTMLElement;
+    const rect = el.getBoundingClientRect();
+    const x = (event.clientX - rect.left) / rect.width - 0.5;
+    const y = (event.clientY - rect.top) / rect.height - 0.5;
+    el.style.setProperty('--ry', `${(x * 10).toFixed(2)}deg`);
+    el.style.setProperty('--rx', `${(-y * 10).toFixed(2)}deg`);
+  }
+
+  onCardLeave(event: MouseEvent): void {
+    const el = event.currentTarget as HTMLElement;
+    el.style.setProperty('--rx', '0deg');
+    el.style.setProperty('--ry', '0deg');
+  }
+
   readonly quickStats = [
     { value: '10+', label: 'Yrs Exp' },
     { value: '50+', label: 'Projects' },

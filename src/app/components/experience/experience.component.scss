@@ -6,6 +6,18 @@
   50%     { box-shadow: 0 0 20px rgba(99,102,241,0.9); }
 }
 
+/* Tablet (768–1023px): single-column timeline instead of squeezed halves.
+   Desktop (>=1024px) keeps the alternating layout. */
+@media (min-width: 768px) and (max-width: 1023.98px) {
+  .tl-line { left: 1.25rem !important; }
+  .tl-dot { left: 1.25rem !important; }
+  .tl-item > div:last-child {
+    margin-left: 3.5rem !important;
+    margin-right: 0 !important;
+    width: calc(100% - 3.5rem) !important;
+  }
+}
+
 .expand-body {
   animation: expandIn 0.3s ease-out;
 }

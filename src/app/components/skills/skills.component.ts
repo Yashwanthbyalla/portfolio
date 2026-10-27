@@ -1,6 +1,7 @@
-import { Component, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { SKILLS } from '../../data/portfolio.data';
 import { ScrollRevealDirective } from '../../directives/scroll-reveal.directive';
+import { ThemeService } from '../../services/theme.service';
 
 @Component({
   selector: 'app-skills',
@@ -10,6 +11,7 @@ import { ScrollRevealDirective } from '../../directives/scroll-reveal.directive'
   styleUrl: './skills.component.scss',
 })
 export class SkillsComponent {
+  readonly themeService = inject(ThemeService);
   readonly skills = SKILLS;
   animated = signal(false);
 

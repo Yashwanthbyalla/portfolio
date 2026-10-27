@@ -12,9 +12,44 @@ nav {
   }
 }
 
+.scroll-progress {
+  position: absolute;
+  top: 0; left: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #6366f1, #22d3ee, #818cf8);
+  box-shadow: 0 0 10px rgba(99,102,241,0.7);
+  transition: width 0.12s linear;
+  z-index: 60;
+}
+
+.theme-switch {
+  display: inline-flex; align-items: center; gap: 7px;
+  min-height: 38px; padding: 7px 12px; border-radius: 999px;
+  background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.14);
+  color: #e0e7ff; font-size: 12px; font-weight: 700; letter-spacing: 0.02em;
+  cursor: pointer; transition: all 0.3s ease; white-space: nowrap;
+}
+.theme-switch:hover {
+  transform: translateY(-1px) scale(1.04);
+  border-color: rgba(34,211,238,0.55);
+  box-shadow: 0 0 18px rgba(34,211,238,0.28);
+  background: rgba(34,211,238,0.12);
+}
+.theme-switch:active { transform: scale(0.96); }
+.theme-switch-icon { font-size: 15px; animation: themeBob 3s ease-in-out infinite; }
+@keyframes themeBob {
+  0%,100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-2px) rotate(8deg); }
+}
+
 .logo-mark {
   background: linear-gradient(135deg, #6366f1, #22d3ee);
   box-shadow: 0 0 16px rgba(99,102,241,0.5);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.logo:hover .logo-mark {
+  transform: rotate(-6deg) scale(1.08);
+  box-shadow: 0 0 24px rgba(99,102,241,0.8);
 }
 
 .nav-link {

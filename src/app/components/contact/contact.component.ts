@@ -2,6 +2,7 @@ import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CONTACT } from '../../data/portfolio.data';
 import { ScrollRevealDirective } from '../../directives/scroll-reveal.directive';
+import { ThemeService } from '../../services/theme.service';
 
 @Component({
   selector: 'app-contact',
@@ -11,6 +12,7 @@ import { ScrollRevealDirective } from '../../directives/scroll-reveal.directive'
   styleUrl: './contact.component.scss',
 })
 export class ContactComponent {
+  readonly themeService = inject(ThemeService);
   private readonly fb = inject(FormBuilder);
   readonly contact = CONTACT;
   submitted = signal(false);

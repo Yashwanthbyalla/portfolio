@@ -1,5 +1,6 @@
-import { Component, HostListener, signal } from '@angular/core';
+import { Component, HostListener, inject, signal } from '@angular/core';
 import { NAV_ITEMS } from '../../data/portfolio.data';
+import { ThemeService } from '../../services/theme.service';
 
 @Component({
   selector: 'app-navbar',
@@ -8,14 +9,18 @@ import { NAV_ITEMS } from '../../data/portfolio.data';
   styleUrl: './navbar.component.scss',
 })
 export class NavbarComponent {
+  readonly themeService = inject(ThemeService);
   readonly navItems = NAV_ITEMS;
   isScrolled = signal(false);
   isMobileOpen = signal(false);
   activeSection = signal('home');
+  scrollProgress = signal(0);
 
   @HostListener('window:scroll')
   onScroll(): void {
     this.isScrolled.set(window.scrollY > 50);
+    const max = document.documentElement.scrollHeight - window.innerHeight;
+    this.scrollProgress.set(max > 0 ? Math.min(100, (window.scrollY / max) * 100) : 0);
     this.updateActiveSection();
   }
 

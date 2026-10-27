@@ -1,6 +1,7 @@
-import { Component, computed, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { PROJECTS, ProjectCategory } from '../../data/portfolio.data';
 import { ScrollRevealDirective } from '../../directives/scroll-reveal.directive';
+import { ThemeService } from '../../services/theme.service';
 
 @Component({
   selector: 'app-projects',
@@ -10,6 +11,7 @@ import { ScrollRevealDirective } from '../../directives/scroll-reveal.directive'
   styleUrl: './projects.component.scss',
 })
 export class ProjectsComponent {
+  readonly themeService = inject(ThemeService);
   readonly projects = PROJECTS;
   activeCategory = signal<ProjectCategory>('All');
 

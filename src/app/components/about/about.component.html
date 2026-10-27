@@ -2,7 +2,7 @@
   <div class="section-wrap section-py">
 
     <div appScrollReveal class="mb-12 sm:mb-16">
-      <p class="section-eyebrow">✦ About Me</p>
+      <p class="section-eyebrow">{{ themeService.theme() === 'ocean' ? '🪸 Chapter 01 · 300m — Coral Reef · About Me' : '🛰️ Chapter 01 · 300m — Scanner Core · About Me' }}</p>
       <h2 class="section-title">Crafting <span class="grad">Digital Experiences</span></h2>
       <div class="divider"></div>
     </div>
@@ -30,7 +30,7 @@
         <!-- Stats grid -->
         <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-2">
           @for (stat of stats; track stat.label; let i = $index) {
-            <div class="card p-4 text-center" appScrollReveal [delay]="80 + i * 60">
+            <div class="card stat-card p-4 text-center" appScrollReveal [delay]="80 + i * 60">
               <span class="text-2xl block mb-1">{{ stat.icon }}</span>
               <span class="font-bold text-xl text-white block grad">{{ stat.value }}</span>
               <span class="text-gray-500 text-xs leading-tight">{{ stat.label }}</span>
@@ -41,7 +41,7 @@
 
       <!-- Right: code window -->
       <div appScrollReveal animationClass="reveal-right" [delay]="150">
-        <div class="card overflow-hidden">
+        <div class="card code-window overflow-hidden">
           <!-- window chrome -->
           <div class="flex items-center gap-1.5 px-4 py-3 border-b border-white/8 bg-white/3">
             <span class="w-3 h-3 rounded-full bg-red-400/80"></span>
