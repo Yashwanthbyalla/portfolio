@@ -71,6 +71,10 @@ export class JourneyCanvasComponent implements AfterViewInit, OnDestroy {
   private readonly swimmers: ((t: number) => void)[] = [];
   private readonly wildlife: ((t: number) => void)[] = [];
   private lastTheme = '';
+  private lastPhase = '';
+  private ambientLight?: THREE.AmbientLight;
+  private sunLight?: THREE.DirectionalLight;
+  private lampMul = 1;
   /** User-interaction state for forest wildlife. */
   private pulseT = -10;
   private camYCurrent = 10;
@@ -118,11 +122,12 @@ export class JourneyCanvasComponent implements AfterViewInit, OnDestroy {
     this.camera.position.set(0, JourneyCanvasComponent.SURFACE_Y, 15);
     this.scene.add(this.camera);
 
-    // Lights
-    this.scene.add(new THREE.AmbientLight(0x8899ff, 0.55));
-    const sun = new THREE.DirectionalLight(0xa5b4fc, 1.1);
-    sun.position.set(6, 20, 8);
-    this.scene.add(sun);
+    // Lights (re-tuned per theme × day-phase in applyEnvironment)
+    this.ambientLight = new THREE.AmbientLight(0x8899ff, 0.55);
+    this.scene.add(this.ambientLight);
+    this.sunLight = new THREE.DirectionalLight(0xa5b4fc, 1.1);
+    this.sunLight.position.set(6, 20, 8);
+    this.scene.add(this.sunLight);
     this.headlamp = new THREE.PointLight(0x818cf8, 60, 46, 1.6);
     this.camera.add(this.headlamp);
 
@@ -2190,6 +2195,40 @@ export class JourneyCanvasComponent implements AfterViewInit, OnDestroy {
     this.targetMouseY = (e.clientY / window.innerHeight) * 2 - 1;
   };
 
+  /** Fog / sun / ambient / lamp tuned per world × time-of-day phase. */
+  private applyEnvironment(theme: string, phase: string): void {
+    const fogByTheme: Record<string, Record<string, number>> = {
+      underground: { dawn: 0x140b06, day: 0x0b0705, dusk: 0x170906, night: 0x040202 },
+      ocean: { dawn: 0x0a3a4a, day: 0x075a7d, dusk: 0x082f4e, night: 0x010a18 },
+      forest: { dawn: 0x27390f, day: 0x173d20, dusk: 0x1d2b0d, night: 0x020805 },
+    };
+    const density: Record<string, number> = { underground: 0.0155, ocean: 0.011, forest: 0.0125 };
+    const sunColor: Record<string, number> = { dawn: 0xffb37a, day: 0xfff2d4, dusk: 0xff8a5c, night: 0x7aa2ff };
+    const sunI: Record<string, number> = { dawn: 0.95, day: 1.45, dusk: 0.8, night: 0.28 };
+    const ambI: Record<string, number> = { dawn: 0.55, day: 0.78, dusk: 0.48, night: 0.3 };
+    const ambColor: Record<string, number> = { dawn: 0xffd9b0, day: 0xffffff, dusk: 0xffc4a3, night: 0x5f7fd9 };
+    // Underground is deep below the sky — phase only whispers down there.
+    const phaseWeight = theme === 'underground' ? 0.35 : 1;
+
+    if (this.scene?.fog instanceof THREE.FogExp2) {
+      this.scene.fog.color.set(fogByTheme[theme]?.[phase] ?? 0x0b0705);
+      this.scene.fog.density = (density[theme] ?? 0.014) * (phase === 'night' ? 1.22 : phase === 'day' ? 0.88 : 1);
+    }
+    if (this.sunLight) {
+      this.sunLight.color.set(theme === 'underground' && phase !== 'day' ? 0xa5b4fc : (sunColor[phase] ?? 0xffffff));
+      this.sunLight.intensity = 1.1 + ((sunI[phase] ?? 1) - 1.1) * phaseWeight;
+    }
+    if (this.ambientLight) {
+      this.ambientLight.color.set(ambColor[phase] ?? 0xffffff);
+      this.ambientLight.intensity = 0.55 + ((ambI[phase] ?? 0.55) - 0.55) * phaseWeight;
+    }
+    // Your lamp matters most after dark.
+    this.lampMul = phase === 'night' ? 1.35 : phase === 'day' ? 0.72 : 1;
+    if (this.headlamp) {
+      this.headlamp.color.set(theme === 'ocean' ? 0x7dd3fc : theme === 'forest' ? 0xffe9b8 : 0xffc98a);
+    }
+  }
+
   private animate = (): void => {
     if (this.disposed || !this.renderer || !this.scene || !this.camera) return;
     this.raf = requestAnimationFrame(this.animate);
@@ -2209,7 +2248,7 @@ export class JourneyCanvasComponent implements AfterViewInit, OnDestroy {
     );
     this.camera.lookAt(this.mouseX * 2.4, camY - 5.4 + this.mouseY * -0.7, -2);
     if (this.headlamp) {
-      const base = this.themeService.theme() === 'ocean' ? 55 : this.themeService.theme() === 'forest' ? 66 : 74;
+      const base = (this.themeService.theme() === 'ocean' ? 55 : this.themeService.theme() === 'forest' ? 66 : 74) * this.lampMul;
       this.headlamp.intensity = base + Math.sin(t * 2.1) * 7; // lamp flicker
     }
 
@@ -2223,20 +2262,17 @@ export class JourneyCanvasComponent implements AfterViewInit, OnDestroy {
       z.group.scale.setScalar(s);
     }
 
-    // Theme worlds: show one, animate its inhabitants
+    // Theme worlds: show one, animate its inhabitants.
+    // Lighting/fog re-tune whenever the world OR the real-world sky changes.
     const theme = this.themeService.theme();
-    if (theme !== this.lastTheme) {
+    const phase = this.themeService.phase();
+    if (theme !== this.lastTheme || phase !== this.lastPhase) {
       this.lastTheme = theme;
+      this.lastPhase = phase;
       if (this.undergroundWorld) this.undergroundWorld.visible = theme === 'underground';
       if (this.oceanWorld) this.oceanWorld.visible = theme === 'ocean';
       if (this.forestWorld) this.forestWorld.visible = theme === 'forest';
-      if (this.scene?.fog instanceof THREE.FogExp2) {
-        this.scene.fog.color.set(theme === 'ocean' ? 0x03263d : theme === 'forest' ? 0x08170a : 0x0b0705);
-        this.scene.fog.density = theme === 'ocean' ? 0.011 : theme === 'forest' ? 0.0125 : 0.0155;
-      }
-      if (this.headlamp) {
-        this.headlamp.color.set(theme === 'ocean' ? 0x7dd3fc : theme === 'forest' ? 0xffe9b8 : 0xffc98a);
-      }
+      this.applyEnvironment(theme, phase);
     }
     if (theme === 'ocean') {
       for (const swim of this.swimmers) swim(t);

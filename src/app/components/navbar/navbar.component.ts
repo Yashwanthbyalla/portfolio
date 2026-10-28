@@ -1,6 +1,7 @@
 import { Component, HostListener, inject, signal } from '@angular/core';
 import { NAV_ITEMS } from '../../data/portfolio.data';
-import { ThemeService } from '../../services/theme.service';
+import { PHASE_META, ThemeService } from '../../services/theme.service';
+import { AmbientAudioService } from '../../services/ambient-audio.service';
 
 @Component({
   selector: 'app-navbar',
@@ -10,6 +11,9 @@ import { ThemeService } from '../../services/theme.service';
 })
 export class NavbarComponent {
   readonly themeService = inject(ThemeService);
+  readonly audio = inject(AmbientAudioService);
+  get phaseMeta() { return PHASE_META[this.themeService.phase()]; }
+  openHub(): void { this.themeService.openHub(); }
   readonly navItems = NAV_ITEMS;
   isScrolled = signal(false);
   isMobileOpen = signal(false);

@@ -22,6 +22,34 @@ nav {
   z-index: 60;
 }
 
+.world-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  min-height: 38px; padding: 7px 12px; border-radius: 999px;
+  background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.16);
+  color: #fff; font-size: 12.5px; font-weight: 700; cursor: pointer; white-space: nowrap;
+  transition: all 0.3s ease;
+}
+.world-btn:hover { transform: translateY(-1px); background: rgba(255,255,255,0.12); box-shadow: 0 6px 18px rgba(0,0,0,0.35); }
+.world-btn-map { color: #a5b4fc; font-size: 11.5px; border-left: 1px solid rgba(255,255,255,0.16); padding-left: 7px; }
+html[data-theme='ocean'] .world-btn-map { color: #67e8f9; }
+html[data-theme='forest'] .world-btn-map { color: #86efac; }
+.sound-toggle {
+  width: 38px; height: 38px; border-radius: 50%; flex: none;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.14);
+  font-size: 15px; cursor: pointer; transition: all 0.25s ease;
+}
+.sound-toggle:hover { background: rgba(255,255,255,0.13); transform: translateY(-1px); }
+.phase-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 11.5px; font-weight: 700; color: #fde68a;
+  padding: 6px 9px; border-radius: 999px;
+  background: rgba(250,204,21,0.08); border: 1px solid rgba(250,204,21,0.18); white-space: nowrap;
+}
+html[data-dayphase='night'] .phase-badge { color: #bfdbfe; background: rgba(59,130,246,0.1); border-color: rgba(147,197,253,0.22); }
+html[data-dayphase='dawn'] .phase-badge, html[data-dayphase='dusk'] .phase-badge { color: #fdba74; background: rgba(249,115,22,0.1); border-color: rgba(251,146,60,0.25); }
+.world-btn-mobile { background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.14); color: #fff; }
+
 .theme-switch {
   display: inline-flex; align-items: center; gap: 2px;
   min-height: 38px; padding: 3px; border-radius: 999px;

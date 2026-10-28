@@ -25,20 +25,16 @@
 
       <!-- Theme switcher + CTA + hamburger -->
       <div class="flex items-center gap-2 sm:gap-3">
-        <div class="theme-switch" role="group" aria-label="Choose theme">
-          <button type="button" class="theme-opt" [class.on]="themeService.theme() === 'underground'"
-                  (click)="themeService.set('underground')" title="Underground theme" aria-label="Underground theme">
-            <span class="theme-switch-icon">🌌</span><span class="theme-switch-label hidden xl:inline">Mine</span>
-          </button>
-          <button type="button" class="theme-opt" [class.on]="themeService.theme() === 'ocean'"
-                  (click)="themeService.set('ocean')" title="Ocean theme" aria-label="Ocean theme">
-            <span class="theme-switch-icon">🌊</span><span class="theme-switch-label hidden xl:inline">Ocean</span>
-          </button>
-          <button type="button" class="theme-opt" [class.on]="themeService.theme() === 'forest'"
-                  (click)="themeService.set('forest')" title="Forest theme" aria-label="Forest theme">
-            <span class="theme-switch-icon">🌲</span><span class="theme-switch-label hidden xl:inline">Forest</span>
-          </button>
-        </div>
+        <span class="phase-badge" [title]="'Auto day/night: it is ' + phaseMeta.label + ' where you are'">{{ phaseMeta.icon }}<span class="hidden md:inline"> {{ phaseMeta.label }}</span></span>
+        <button type="button" class="sound-toggle" (click)="audio.toggle()" [attr.aria-pressed]="audio.enabled()"
+                [title]="audio.enabled() ? 'Mute ambient sound' : 'Play ambient sound for this world'" [attr.aria-label]="'Toggle ambient sound'">
+          {{ audio.enabled() ? '🔊' : '🔇' }}
+        </button>
+        <button type="button" class="world-btn" (click)="openHub()" title="Open the world map — choose Mine, Ocean or Forest" aria-label="Open world map">
+          <span class="theme-switch-icon">{{ themeService.meta().icon }}</span>
+          <span class="hidden sm:inline">{{ themeService.meta().label }}</span>
+          <span class="world-btn-map">🗺️ Worlds</span>
+        </button>
         <a href="#contact" class="hidden lg:inline-flex btn btn-primary !py-2 !px-5 !text-sm">
           Hire Me
         </a>
@@ -72,7 +68,10 @@
             {{ item.label }}
           </a>
         }
-        <div class="pt-3 border-t border-white/8 mt-2">
+        <div class="pt-3 border-t border-white/8 mt-2 space-y-2">
+          <button type="button" class="btn w-full justify-center py-3 world-btn-mobile" (click)="closeMobile(); openHub()">
+            🗺️ Choose your world — currently {{ themeService.meta().icon }} {{ themeService.meta().label }}
+          </button>
           <a href="#contact" class="btn btn-primary w-full justify-center py-3" (click)="closeMobile()">
             Hire Me
           </a>

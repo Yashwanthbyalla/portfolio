@@ -9,6 +9,7 @@ import { ContactComponent } from './components/contact/contact.component';
 import { FooterComponent } from './components/footer/footer.component';
 import { JourneyCanvasComponent } from './components/journey/journey-canvas.component';
 import { JourneyHudComponent } from './components/journey/journey-hud.component';
+import { ThemeHubComponent } from './components/theme-hub/theme-hub.component';
 import { ThemeService } from './services/theme.service';
 import { inject } from '@angular/core';
 
@@ -26,6 +27,7 @@ import { inject } from '@angular/core';
     FooterComponent,
     JourneyCanvasComponent,
     JourneyHudComponent,
+    ThemeHubComponent,
   ],
   template: `
     <app-journey-canvas />
@@ -36,6 +38,7 @@ import { inject } from '@angular/core';
       <div class="ambient-grid"></div>
     </div>
     <app-navbar />
+    <app-theme-hub />
     <app-journey-hud />
     <main class="journey-main">
       <app-hero />

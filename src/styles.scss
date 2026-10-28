@@ -413,6 +413,28 @@ html[data-theme='forest'] .gate-label { color: #a3e635 !important; }
 html[data-theme='forest'] .filter-active { background: rgba(21,128,61,0.28) !important; border-color: rgba(134,239,172,0.5) !important; }
 html[data-theme='forest'] input:focus, html[data-theme='forest'] textarea:focus { border-color: rgba(134,239,172,0.55) !important; }
 
+/* ═══ AUTO DAY/NIGHT (html[data-dayphase]) — applies across all worlds ═══ */
+/* Dawn: warm golden wash */
+html[data-dayphase='dawn'] .card { border-color: rgba(251,191,36,0.22); }
+html[data-dayphase='dawn'] .ambient-blob-1 { opacity: 0.85; filter: hue-rotate(-14deg) brightness(1.1); }
+html[data-dayphase='dawn'] .gate-label { text-shadow: 0 2px 14px rgba(0,0,0,0.9), 0 0 18px rgba(251,191,36,0.35); }
+/* Day: brightest, crispest */
+html[data-dayphase='day'] .card { background-blend-mode: normal; box-shadow: 0 10px 34px rgba(0,0,0,0.34); }
+html[data-dayphase='day'] .ambient-blob-1, html[data-dayphase='day'] .ambient-blob-2, html[data-dayphase='day'] .ambient-blob-3 { opacity: 1.1; }
+html[data-dayphase='day'] .section-title { text-shadow: 0 2px 22px rgba(0,0,0,0.35); }
+/* Dusk: amber/orange glow */
+html[data-dayphase='dusk'] .card { border-color: rgba(251,146,60,0.24); }
+html[data-dayphase='dusk'] .ambient-blob-1 { filter: hue-rotate(-24deg) saturate(1.25); }
+html[data-dayphase='dusk'] .ambient-blob-2 { filter: hue-rotate(-18deg); }
+html[data-dayphase='dusk'] .section-eyebrow { text-shadow: 0 0 16px rgba(249,115,22,0.35); }
+/* Night: darker, moodier, lamps & glows pop */
+html[data-dayphase='night'] .card { box-shadow: 0 16px 44px rgba(0,0,0,0.62), inset 0 1px 0 rgba(255,255,255,0.05); }
+html[data-dayphase='night'] .ambient-blob-1, html[data-dayphase='night'] .ambient-blob-2, html[data-dayphase='night'] .ambient-blob-3 { opacity: 0.55; }
+html[data-dayphase='night'] .section-title { text-shadow: 0 2px 26px rgba(0,0,0,0.7); }
+html[data-dayphase='night'] .gate-label { color: #bfdbfe; }
+html[data-dayphase='night'][data-theme='forest'] .gate-label { color: #bbf7d0 !important; }
+html[data-dayphase='night'] .btn-primary { filter: brightness(1.08); }
+
 /* Respect users who prefer reduced motion */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
