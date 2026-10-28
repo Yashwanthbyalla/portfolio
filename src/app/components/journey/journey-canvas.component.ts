@@ -67,8 +67,13 @@ export class JourneyCanvasComponent implements AfterViewInit, OnDestroy {
   /** Theme worlds: only one is visible at a time. */
   private undergroundWorld?: THREE.Group;
   private oceanWorld?: THREE.Group;
+  private forestWorld?: THREE.Group;
   private readonly swimmers: ((t: number) => void)[] = [];
+  private readonly wildlife: ((t: number) => void)[] = [];
   private lastTheme = '';
+  /** User-interaction state for forest wildlife. */
+  private pulseT = -10;
+  private camYCurrent = 10;
 
   /** Total vertical travel of the camera through the shaft. */
   private static readonly TRAVEL = 168;
@@ -85,6 +90,7 @@ export class JourneyCanvasComponent implements AfterViewInit, OnDestroy {
     window.removeEventListener('scroll', this.onScroll);
     window.removeEventListener('resize', this.onResize);
     window.removeEventListener('mousemove', this.onMouseMove);
+    window.removeEventListener('pointerdown', this.onPointerDown);
     this.renderer?.dispose();
     this.scene?.traverse((obj) => {
       const mesh = obj as THREE.Mesh;
@@ -122,7 +128,8 @@ export class JourneyCanvasComponent implements AfterViewInit, OnDestroy {
 
     this.undergroundWorld = new THREE.Group();
     this.oceanWorld = new THREE.Group();
-    this.scene.add(this.undergroundWorld, this.oceanWorld);
+    this.forestWorld = new THREE.Group();
+    this.scene.add(this.undergroundWorld, this.oceanWorld, this.forestWorld);
 
     this.buildSurface();
     this.buildShaft();
@@ -133,12 +140,14 @@ export class JourneyCanvasComponent implements AfterViewInit, OnDestroy {
     this.buildExitPortal(-158);
     this.buildParticles(reduced);
     this.buildOcean();
+    this.buildForest();
     this.applyViewLayout();
 
     this.onScroll();
     window.addEventListener('scroll', this.onScroll, { passive: true });
     window.addEventListener('resize', this.onResize, { passive: true });
     window.addEventListener('mousemove', this.onMouseMove, { passive: true });
+    window.addEventListener('pointerdown', this.onPointerDown, { passive: true });
 
     this.clock.start();
     this.animate();
@@ -580,6 +589,856 @@ export class JourneyCanvasComponent implements AfterViewInit, OnDestroy {
     this.undergroundWorld?.add(this.dust);
     this.embers = make(reduced ? 80 : 260, 0xfbbf24, 0.17, [-168, -138]);
     this.undergroundWorld?.add(this.embers);
+  }
+
+  // ══ FOREST THEME ══════════════════════════════════════════════════════
+  private buildForest(): void {
+    if (!this.forestWorld) return;
+    this.buildForestEnvironment();
+    this.buildCanopyGate(0);
+    this.buildMeadow(-38);
+    this.buildElephantGrove(-68);
+    this.buildPredatorTerritory(-98);
+    this.buildNocturnalRuins(-128);
+    this.buildSunriseClearing(-158);
+  }
+
+  private furMat(top: string, belly: string, pattern: 'stripes' | 'spots' | 'bands' | 'plain', accent = '#1c1917'): THREE.MeshStandardMaterial {
+    return new THREE.MeshStandardMaterial({
+      map: this.fishTexture(top, belly, pattern, accent),
+      roughness: 0.92, metalness: 0,
+    });
+  }
+
+  /** A leg on a hip pivot so it can swing while walking. */
+  private leg(parent: THREE.Group, x: number, y: number, z: number, len: number, r: number, mat: THREE.Material): THREE.Group {
+    const hip = new THREE.Group();
+    hip.position.set(x, y, z);
+    const limb = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.75, r, len, 7), mat);
+    limb.position.y = -len / 2;
+    hip.add(limb);
+    const hoof = new THREE.Mesh(new THREE.BoxGeometry(r * 1.7, 0.09, r * 2), new THREE.MeshStandardMaterial({ color: 0x292524, roughness: 1 }));
+    hoof.position.y = -len;
+    hip.add(hoof);
+    parent.add(hip);
+    return hip;
+  }
+
+  private makeDeer(stag: boolean, seed = 0): THREE.Group {
+    const deer = new THREE.Group();
+    const fur = this.furMat('#96683f', '#e3cda8', 'spots', 'rgba(255,250,235,0.85)');
+    const body = new THREE.Mesh(this.fishBodyGeo(1.8, 0.78, 0.52), fur);
+    body.position.y = 1.05;
+    deer.add(body);
+    const neck = new THREE.Group();
+    neck.position.set(0.85, 1.28, 0);
+    const neckMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.2, 0.85, 8), fur);
+    neckMesh.position.y = 0.36;
+    neckMesh.rotation.z = -0.5;
+    neck.add(neckMesh);
+    const head = new THREE.Group();
+    head.position.set(0.38, 0.78, 0);
+    const skull = new THREE.Mesh(new THREE.SphereGeometry(0.21, 14, 10), fur);
+    skull.scale.set(1.25, 0.95, 0.8);
+    head.add(skull);
+    const snout = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.34, 8), fur);
+    snout.rotation.z = -Math.PI / 2;
+    snout.position.set(0.3, -0.04, 0);
+    head.add(snout);
+    const nose = new THREE.Mesh(new THREE.SphereGeometry(0.05, 8, 6), new THREE.MeshStandardMaterial({ color: 0x1c1917, roughness: 0.4 }));
+    nose.position.set(0.46, -0.04, 0);
+    head.add(nose);
+    this.eyePair(head, 0.16, 0.06, 0.15, 0.032);
+    for (const s of [-1, 1]) {
+      const ear = new THREE.Mesh(new THREE.ConeGeometry(0.09, 0.3, 6), fur);
+      ear.position.set(-0.08, 0.2, s * 0.16);
+      ear.rotation.set(s * 0.7, 0, 0.3);
+      head.add(ear);
+    }
+    if (stag) {
+      const antlerMat = new THREE.MeshStandardMaterial({ color: 0xd6c7a8, roughness: 0.85 });
+      for (const s of [-1, 1]) {
+        const beam = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.04, 0.85, 6), antlerMat);
+        beam.position.set(-0.12, 0.5, s * 0.12);
+        beam.rotation.set(s * 0.35, 0, 0.42);
+        head.add(beam);
+        for (let ti = 0; ti < 3; ti++) {
+          const tine = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.024, 0.34, 5), antlerMat);
+          tine.position.set(-0.2 - ti * 0.05, 0.55 + ti * 0.12, s * (0.22 + ti * 0.07));
+          tine.rotation.set(s * 0.5, 0, 0.9 - ti * 0.25);
+          head.add(tine);
+        }
+      }
+    }
+    neck.add(head);
+    deer.add(neck);
+    const legs: THREE.Group[] = [
+      this.leg(deer, 0.62, 1, 0.2, 0.98, 0.06, fur), this.leg(deer, 0.62, 1, -0.2, 0.98, 0.06, fur),
+      this.leg(deer, -0.62, 1, 0.2, 0.98, 0.06, fur), this.leg(deer, -0.62, 1, -0.2, 0.98, 0.06, fur),
+    ];
+    const tail = new THREE.Mesh(new THREE.ConeGeometry(0.09, 0.3, 6), fur);
+    tail.position.set(-0.95, 1.22, 0);
+    tail.rotation.z = 0.7;
+    deer.add(tail);
+    deer.userData['neck'] = neck;
+    deer.userData['head'] = head;
+    deer.userData['legs'] = legs;
+    deer.userData['seed'] = seed;
+    return deer;
+  }
+
+  private graze(animal: THREE.Group, zoneY: number): void {
+    const neck = animal.userData['neck'] as THREE.Group;
+    const head = animal.userData['head'] as THREE.Group;
+    const seed = animal.userData['seed'] as number;
+    this.wildlife.push((t) => {
+      const near = this.nearFactor(zoneY);
+      const boost = this.pulseBoost(t);
+      // Graze cycle: head down eating, periodically lifts — snaps up when you approach or click
+      const cycle = Math.sin(t * 0.45 + seed * 2.4);
+      const alert = Math.max(near * 0.9, boost);
+      const grazeAmt = THREE.MathUtils.clamp(cycle * 0.5 + 0.5 - alert * 1.4, 0, 1);
+      neck.rotation.z = -grazeAmt * 0.95;
+      head.rotation.z = grazeAmt * 0.55;
+      // Eyes on you: head tracks the cursor when alert
+      head.rotation.y = this.mouseX * 0.75 * alert;
+      animal.position.y = boost * Math.abs(Math.sin(t * 9)) * 0.28; // startled hop on click
+      animal.rotation.y = Math.sin(t * 0.22 + seed) * 0.35 + this.mouseX * 0.2 * alert;
+    });
+  }
+
+  private makeRabbit(seed = 0): THREE.Group {
+    const rabbit = new THREE.Group();
+    const fur = this.furMat('#a8a29e', '#f5f5f4', 'plain');
+    const body = new THREE.Mesh(new THREE.SphereGeometry(0.3, 14, 10), fur);
+    body.scale.set(1.25, 0.95, 0.9);
+    body.position.y = 0.3;
+    rabbit.add(body);
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.19, 12, 10), fur);
+    head.position.set(0.34, 0.46, 0);
+    rabbit.add(head);
+    this.eyePair(rabbit, 0.42, 0.5, 0.12, 0.026);
+    for (const s of [-1, 1]) {
+      const ear = new THREE.Mesh(new THREE.ConeGeometry(0.055, 0.44, 6), fur);
+      ear.position.set(0.28, 0.78, s * 0.08);
+      ear.rotation.z = -0.15;
+      ear.name = s < 0 ? 'earL' : 'earR';
+      rabbit.add(ear);
+    }
+    const tail = new THREE.Mesh(new THREE.SphereGeometry(0.09, 8, 8), this.furMat('#f5f5f4', '#ffffff', 'plain'));
+    tail.position.set(-0.36, 0.36, 0);
+    rabbit.add(tail);
+    rabbit.userData['seed'] = seed;
+    return rabbit;
+  }
+
+  private hopAbout(animal: THREE.Group, home: THREE.Vector3, zoneY: number): void {
+    const seed = animal.userData['seed'] as number;
+    this.wildlife.push((t) => {
+      const boost = this.pulseBoost(t);
+      const hopRate = 2.2 + boost * 5;
+      const hop = Math.abs(Math.sin(t * hopRate + seed * 3));
+      animal.position.set(
+        home.x + Math.sin(t * 0.35 + seed * 2) * (1.2 + boost * 1.6),
+        home.y + hop * (0.32 + boost * 0.3),
+        home.z + Math.cos(t * 0.28 + seed) * 0.8,
+      );
+      animal.rotation.y = Math.cos(t * 0.35 + seed * 2) > 0 ? 0.5 : -2.6;
+      animal.rotation.z = -hop * 0.18;
+      const earL = animal.getObjectByName('earL');
+      const earR = animal.getObjectByName('earR');
+      if (earL) earL.rotation.x = Math.sin(t * 6 + seed) * 0.18;
+      if (earR) earR.rotation.x = Math.cos(t * 6 + seed) * 0.18;
+      void zoneY;
+    });
+  }
+
+  private makeFox(): THREE.Group {
+    const fox = new THREE.Group();
+    const fur = this.furMat('#c2611d', '#f7e8d5', 'plain');
+    const body = new THREE.Mesh(this.fishBodyGeo(1.35, 0.55, 0.4), fur);
+    body.position.y = 0.62;
+    fox.add(body);
+    const head = new THREE.Group();
+    head.position.set(0.72, 0.82, 0);
+    const skull = new THREE.Mesh(new THREE.SphereGeometry(0.19, 14, 10), fur);
+    skull.scale.set(1.15, 0.9, 0.85);
+    head.add(skull);
+    const snout = new THREE.Mesh(new THREE.ConeGeometry(0.085, 0.36, 8), this.furMat('#e8d9c3', '#f7e8d5', 'plain'));
+    snout.rotation.z = -Math.PI / 2;
+    snout.position.set(0.3, -0.05, 0);
+    head.add(snout);
+    this.eyePair(head, 0.14, 0.05, 0.12, 0.028);
+    for (const s of [-1, 1]) {
+      const ear = new THREE.Mesh(new THREE.ConeGeometry(0.085, 0.26, 4), fur);
+      ear.position.set(-0.06, 0.2, s * 0.11);
+      head.add(ear);
+    }
+    fox.add(head);
+    const tailCurve = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(-0.68, 0.68, 0), new THREE.Vector3(-1.05, 0.82, 0.08),
+      new THREE.Vector3(-1.32, 1.02, 0), new THREE.Vector3(-1.45, 1.28, -0.05),
+    ]);
+    const tail = new THREE.Mesh(new THREE.TubeGeometry(tailCurve, 10, 0.13, 7), fur);
+    fox.add(tail);
+    const legs = [
+      this.leg(fox, 0.45, 0.58, 0.14, 0.56, 0.045, fur), this.leg(fox, 0.45, 0.58, -0.14, 0.56, 0.045, fur),
+      this.leg(fox, -0.45, 0.58, 0.14, 0.56, 0.045, fur), this.leg(fox, -0.45, 0.58, -0.14, 0.56, 0.045, fur),
+    ];
+    fox.userData['legs'] = legs;
+    fox.userData['head'] = head;
+    return fox;
+  }
+
+  private makeTiger(): THREE.Group {
+    const tiger = new THREE.Group();
+    const fur = this.furMat('#d97c22', '#f5e3c2', 'bands', 'rgba(20,12,4,0.9)');
+    const body = new THREE.Mesh(this.fishBodyGeo(2.15, 0.85, 0.58), fur);
+    body.position.y = 0.98;
+    tiger.add(body);
+    const head = new THREE.Group();
+    head.position.set(1.12, 1.18, 0);
+    const skull = new THREE.Mesh(new THREE.SphereGeometry(0.3, 16, 12), fur);
+    skull.scale.set(1.05, 0.9, 0.95);
+    head.add(skull);
+    const muzzle = new THREE.Mesh(new THREE.SphereGeometry(0.18, 12, 10), this.furMat('#f5e3c2', '#fff7e8', 'plain'));
+    muzzle.scale.set(1.1, 0.75, 0.9);
+    muzzle.position.set(0.24, -0.1, 0);
+    head.add(muzzle);
+    const nose = new THREE.Mesh(new THREE.SphereGeometry(0.055, 8, 6), new THREE.MeshStandardMaterial({ color: 0x7f1d3a, roughness: 0.35 }));
+    nose.position.set(0.42, -0.04, 0);
+    head.add(nose);
+    // Glowing amber eyes
+    const eyeMat = new THREE.MeshBasicMaterial({ color: 0xffb020 });
+    for (const s of [-1, 1]) {
+      const eye = new THREE.Mesh(new THREE.SphereGeometry(0.038, 8, 8), eyeMat);
+      eye.position.set(0.24, 0.08, s * 0.15);
+      head.add(eye);
+      const ear = new THREE.Mesh(new THREE.SphereGeometry(0.09, 8, 6), fur);
+      ear.scale.set(1, 1, 0.45);
+      ear.position.set(-0.14, 0.24, s * 0.2);
+      head.add(ear);
+    }
+    tiger.add(head);
+    const tailCurve = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(-1.1, 1.1, 0), new THREE.Vector3(-1.6, 0.9, 0.15),
+      new THREE.Vector3(-1.95, 1.15, 0.05), new THREE.Vector3(-2.1, 1.5, -0.08),
+    ]);
+    const tail = new THREE.Mesh(new THREE.TubeGeometry(tailCurve, 12, 0.05, 6), fur);
+    tail.name = 'tail';
+    tiger.add(tail);
+    const legs = [
+      this.leg(tiger, 0.72, 0.92, 0.24, 0.9, 0.075, fur), this.leg(tiger, 0.72, 0.92, -0.24, 0.9, 0.075, fur),
+      this.leg(tiger, -0.72, 0.92, 0.24, 0.9, 0.075, fur), this.leg(tiger, -0.72, 0.92, -0.24, 0.9, 0.075, fur),
+    ];
+    tiger.userData['legs'] = legs;
+    tiger.userData['head'] = head;
+    return tiger;
+  }
+
+  /** Walk cycle + pacing for fox/tiger/wolf-style animals. */
+  private pace(animal: THREE.Group, home: THREE.Vector3, range: number, speed: number, zoneY: number, predator = false): void {
+    const legs = animal.userData['legs'] as THREE.Group[];
+    const head = animal.userData['head'] as THREE.Group | undefined;
+    this.wildlife.push((t) => {
+      const boost = this.pulseBoost(t);
+      const near = this.nearFactor(zoneY);
+      const paceSpeed = speed * (1 + boost * 1.6 + near * 0.4);
+      const phase = t * paceSpeed;
+      animal.position.x = home.x + Math.sin(phase * 0.32) * range;
+      animal.position.y = home.y + Math.abs(Math.sin(phase * 2.4)) * 0.05;
+      animal.position.z = home.z + Math.cos(phase * 0.21) * range * 0.25;
+      animal.rotation.y = Math.cos(phase * 0.32) > 0 ? 0 : Math.PI;
+      legs.forEach((leg, i) => { leg.rotation.z = Math.sin(phase * 2.4 + (i % 2) * Math.PI + Math.floor(i / 2) * 0.4) * 0.5; });
+      const tail = animal.getObjectByName('tail');
+      if (tail) tail.rotation.y = Math.sin(t * 2.2) * 0.3;
+      if (head) {
+        // Predators stare at you; prey glance around
+        head.rotation.y = predator ? this.mouseX * 0.85 : Math.sin(t * 0.7) * 0.4 + this.mouseX * 0.3 * near;
+        head.rotation.z = predator ? -0.06 - boost * 0.16 : 0; // crouch/lunge tell on click
+        if (predator) animal.position.y += boost * 0.12 * Math.sin(Math.min(1, boost) * Math.PI);
+      }
+    });
+  }
+
+  private makeBear(): THREE.Group {
+    const bear = new THREE.Group();
+    const fur = this.furMat('#4a3524', '#5d4630', 'plain');
+    const body = new THREE.Mesh(this.fishBodyGeo(2.3, 1.25, 0.95), fur);
+    body.position.y = 1.25;
+    bear.add(body);
+    const hump = new THREE.Mesh(new THREE.SphereGeometry(0.55, 12, 10), fur);
+    hump.position.set(0.55, 1.85, 0);
+    bear.add(hump);
+    const head = new THREE.Group();
+    head.position.set(1.2, 1.45, 0);
+    const skull = new THREE.Mesh(new THREE.SphereGeometry(0.34, 16, 12), fur);
+    skull.scale.set(1.1, 0.95, 0.9);
+    head.add(skull);
+    const snout = new THREE.Mesh(new THREE.SphereGeometry(0.19, 12, 10), this.furMat('#8a6f4d', '#a98f66', 'plain'));
+    snout.scale.set(1.25, 0.8, 0.85);
+    snout.position.set(0.32, -0.1, 0);
+    head.add(snout);
+    this.eyePair(head, 0.24, 0.1, 0.2, 0.04);
+    for (const s of [-1, 1]) {
+      const ear = new THREE.Mesh(new THREE.SphereGeometry(0.11, 8, 6), fur);
+      ear.scale.set(1, 1, 0.5);
+      ear.position.set(-0.1, 0.3, s * 0.22);
+      head.add(ear);
+    }
+    bear.add(head);
+    const legs = [
+      this.leg(bear, 0.78, 1.15, 0.34, 1.1, 0.13, fur), this.leg(bear, 0.78, 1.15, -0.34, 1.1, 0.13, fur),
+      this.leg(bear, -0.78, 1.15, 0.34, 1.1, 0.13, fur), this.leg(bear, -0.78, 1.15, -0.34, 1.1, 0.13, fur),
+    ];
+    bear.userData['legs'] = legs;
+    bear.userData['head'] = head;
+    return bear;
+  }
+
+  private makeElephant(): THREE.Group {
+    const el = new THREE.Group();
+    const skin = new THREE.MeshStandardMaterial({
+      map: this.skinTexture((ctx, w, h) => {
+        ctx.fillStyle = '#8d8d94'; ctx.fillRect(0, 0, w, h);
+        ctx.strokeStyle = 'rgba(60,60,66,0.35)'; ctx.lineWidth = 1.2;
+        for (let i = 0; i < 160; i++) {
+          ctx.beginPath();
+          const x = Math.random() * w, yy = Math.random() * h;
+          ctx.moveTo(x, yy); ctx.lineTo(x + (Math.random() - 0.5) * 34, yy + (Math.random() - 0.5) * 20); ctx.stroke();
+        }
+        for (let i = 0; i < 2400; i++) { ctx.fillStyle = 'rgba(40,40,46,0.12)'; ctx.fillRect(Math.random() * w, Math.random() * h, 1.6, 1.6); }
+      }),
+      roughness: 0.94,
+    });
+    const body = new THREE.Mesh(this.fishBodyGeo(4.4, 2.5, 2), skin);
+    body.position.y = 2.55;
+    el.add(body);
+    const head = new THREE.Group();
+    head.position.set(2.25, 2.9, 0);
+    const skull = new THREE.Mesh(new THREE.SphereGeometry(0.95, 18, 14), skin);
+    skull.scale.set(0.95, 1.05, 0.9);
+    head.add(skull);
+    this.eyePair(head, 0.62, 0.18, 0.62, 0.055);
+    for (const s of [-1, 1]) {
+      const ear = new THREE.Mesh(new THREE.SphereGeometry(0.72, 14, 10), skin);
+      ear.scale.set(0.32, 1, 0.95);
+      ear.position.set(-0.25, 0.05, s * 0.85);
+      ear.name = s < 0 ? 'earL' : 'earR';
+      head.add(ear);
+      const tusk = new THREE.Mesh(new THREE.ConeGeometry(0.07, 1.05, 8), new THREE.MeshStandardMaterial({ color: 0xf5efe0, roughness: 0.35 }));
+      tusk.position.set(0.62, -0.62, s * 0.34);
+      tusk.rotation.z = 2.5;
+      head.add(tusk);
+    }
+    // Trunk: segmented tube that sways + curls
+    const trunkCurve = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(0.72, -0.35, 0), new THREE.Vector3(0.98, -1.15, 0),
+      new THREE.Vector3(0.9, -1.85, 0), new THREE.Vector3(0.62, -2.3, 0),
+    ]);
+    const trunk = new THREE.Mesh(new THREE.TubeGeometry(trunkCurve, 14, 0.19, 8), skin);
+    trunk.name = 'trunk';
+    head.add(trunk);
+    el.add(head);
+    const legs: THREE.Group[] = [];
+    for (const [lx, lz] of [[1.45, 0.62], [1.45, -0.62], [-1.45, 0.62], [-1.45, -0.62]] as const) {
+      legs.push(this.leg(el, lx, 2.1, lz, 2.05, 0.21, skin));
+    }
+    const tail = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.025, 1.3, 6), skin);
+    tail.position.set(-2.25, 2.5, 0);
+    tail.rotation.z = 0.25;
+    tail.name = 'tail';
+    el.add(tail);
+    el.userData['head'] = head;
+    el.userData['legs'] = legs;
+    return el;
+  }
+
+  private makeOwl(): THREE.Group {
+    const owl = new THREE.Group();
+    const fur = this.furMat('#6b5136', '#9a8264', 'spots', 'rgba(38,28,16,0.8)');
+    const body = new THREE.Mesh(new THREE.SphereGeometry(0.34, 16, 12), fur);
+    body.scale.set(0.95, 1.25, 0.9);
+    body.position.y = 0.42;
+    owl.add(body);
+    const head = new THREE.Group();
+    head.position.y = 0.92;
+    const skull = new THREE.Mesh(new THREE.SphereGeometry(0.27, 16, 12), fur);
+    skull.scale.set(1.15, 0.9, 0.95);
+    head.add(skull);
+    // Big forward eyes in a pale face disc
+    const face = new THREE.Mesh(new THREE.SphereGeometry(0.21, 14, 10), this.furMat('#e8dcc3', '#f2e9d4', 'plain'));
+    face.scale.set(1.05, 0.85, 0.55);
+    face.position.set(0.1, 0, 0);
+    face.rotation.y = Math.PI / 2;
+    head.add(face);
+    const eyeMat = new THREE.MeshBasicMaterial({ color: 0xffb020 });
+    for (const s of [-1, 1]) {
+      const eye = new THREE.Mesh(new THREE.SphereGeometry(0.052, 10, 8), eyeMat);
+      eye.position.set(0.24, 0.04, s * 0.09);
+      head.add(eye);
+      const tuft = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.18, 5), fur);
+      tuft.position.set(-0.05, 0.22, s * 0.16);
+      head.add(tuft);
+    }
+    const beak = new THREE.Mesh(new THREE.ConeGeometry(0.035, 0.1, 6), new THREE.MeshStandardMaterial({ color: 0x3f3226, roughness: 0.5 }));
+    beak.rotation.x = Math.PI;
+    beak.position.set(0.26, -0.06, 0);
+    head.add(beak);
+    owl.add(head);
+    for (const s of [-1, 1]) {
+      const wing = new THREE.Mesh(new THREE.SphereGeometry(0.26, 10, 8), fur);
+      wing.scale.set(0.35, 1.05, 0.75);
+      wing.position.set(-0.02, 0.42, s * 0.3);
+      owl.add(wing);
+    }
+    owl.userData['head'] = head;
+    return owl;
+  }
+
+  private makeBird(color: number, size = 1): THREE.Group {
+    const bird = new THREE.Group();
+    const mat = this.furMat('#' + new THREE.Color(color).getHexString(), '#ffffff', 'plain');
+    const body = new THREE.Mesh(this.fishBodyGeo(0.72, 0.26, 0.2), mat);
+    bird.add(body);
+    const headB = new THREE.Mesh(new THREE.SphereGeometry(0.13, 10, 8), mat);
+    headB.position.set(0.4, 0.08, 0);
+    bird.add(headB);
+    const beak = new THREE.Mesh(new THREE.ConeGeometry(0.045, 0.18, 6), new THREE.MeshStandardMaterial({ color: 0xf59e0b, roughness: 0.5 }));
+    beak.rotation.z = -Math.PI / 2;
+    beak.position.set(0.58, 0.06, 0);
+    bird.add(beak);
+    this.eyePair(bird, 0.42, 0.12, 0.08, 0.02);
+    const tailB = this.finMesh(color, 0.3, 0.16, 0.9);
+    tailB.position.set(-0.42, 0.02, 0);
+    bird.add(tailB);
+    for (const s of [-1, 1]) {
+      const wingPivot = new THREE.Group();
+      wingPivot.position.set(0.05, 0.1, s * 0.08);
+      const wing = this.finMesh(color, 0.55, 0.34, 0.85);
+      wing.position.z = s * 0.3;
+      wingPivot.add(wing);
+      wingPivot.name = s < 0 ? 'wingL' : 'wingR';
+      bird.add(wingPivot);
+    }
+    bird.scale.setScalar(size);
+    return bird;
+  }
+
+  private flyCircle(bird: THREE.Group, cx: number, cy: number, cz: number, r: number, speed: number, phase: number): void {
+    this.wildlife.push((t) => {
+      const boost = this.pulseBoost(t);
+      const sp = speed * (1 + boost * 2.2); // scatter burst when clicked
+      const a = t * sp + phase + boost * 1.5;
+      const rr = r + boost * 2.5;
+      bird.position.set(cx + Math.cos(a) * rr, cy + Math.sin(t * 2.1 + phase) * 0.7 + boost * 1.2, cz + Math.sin(a) * rr);
+      bird.rotation.y = -a - Math.PI / 2 + (speed < 0 ? Math.PI : 0);
+      bird.rotation.z = -0.35;
+      const flap = Math.sin(t * (11 + boost * 16) + phase) * (0.95 - boost * 0.3);
+      const wl = bird.getObjectByName('wingL');
+      const wr = bird.getObjectByName('wingR');
+      if (wl) wl.rotation.x = flap;
+      if (wr) wr.rotation.x = -flap;
+    });
+  }
+
+  private forestFloor(g: THREE.Group, color = 0x1e3a1c): void {
+    const floor = new THREE.Mesh(new THREE.CircleGeometry(14, 36),
+      new THREE.MeshStandardMaterial({ color, roughness: 1 }));
+    floor.rotation.x = -Math.PI / 2;
+    floor.position.set(0, -5.9, -3);
+    g.add(floor);
+  }
+
+  private tree(g: THREE.Group, x: number, z: number, h: number, canopyColor: number, yBase = -6): void {
+    const trunkMat = new THREE.MeshStandardMaterial({ color: 0x5a4230, roughness: 1 });
+    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.42, h, 8), trunkMat);
+    trunk.position.set(x, yBase + h / 2, z);
+    trunk.rotation.z = (x % 3) * 0.02;
+    g.add(trunk);
+    const leafMat = new THREE.MeshStandardMaterial({ color: canopyColor, roughness: 0.95, flatShading: true });
+    for (let i = 0; i < 3; i++) {
+      const blob = new THREE.Mesh(new THREE.IcosahedronGeometry(1.5 - i * 0.28, 1), leafMat);
+      blob.position.set(x + (i - 1) * 0.8, yBase + h + 0.7 + i * 0.75, z + ((i * 7) % 3 - 1) * 0.6);
+      blob.scale.y = 0.82;
+      g.add(blob);
+    }
+  }
+
+  private buildForestEnvironment(): void {
+    if (!this.forestWorld) return;
+    const greens = [0x2f6b2f, 0x3d7a35, 0x27632c, 0x4c8a3f];
+    // Forest lining the whole descent path
+    const env = new THREE.Group();
+    for (let i = 0; i < 72; i++) {
+      const a = (i * 2.4) % (Math.PI * 2);
+      const depthY = -4 - ((i * 47) % 160);
+      const r = 11.5 + (i % 5) * 1.4;
+      this.tree(env, Math.cos(a) * r, Math.sin(a) * r - 4, 9 + (i % 5) * 2.4, greens[i % greens.length], depthY - 6);
+    }
+    this.forestWorld.add(env);
+    // Fireflies everywhere
+    const count = 380;
+    const pos = new Float32Array(count * 3);
+    for (let i = 0; i < count; i++) {
+      pos[i * 3] = (Math.random() - 0.5) * 28;
+      pos[i * 3 + 1] = 12 - Math.random() * 178;
+      pos[i * 3 + 2] = (Math.random() - 0.5) * 24 - 3;
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    const flies = new THREE.Points(geo, new THREE.PointsMaterial({
+      color: 0xd9f99d, size: 0.17, transparent: true, opacity: 0.85, depthWrite: false,
+    }));
+    this.forestWorld.add(flies);
+    this.wildlife.push((t) => {
+      flies.rotation.y = t * 0.012;
+      (flies.material as THREE.PointsMaterial).opacity = 0.6 + Math.sin(t * 2.4) * 0.3 + this.pulseBoost(t) * 0.4;
+      flies.position.y = Math.sin(t * 0.4) * 1.2;
+    });
+    // Sun shafts through the canopy (surface)
+    for (let i = 0; i < 4; i++) {
+      const ray = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 2.6, 24, 10, 1, true),
+        new THREE.MeshBasicMaterial({ color: 0xfde68a, transparent: true, opacity: 0.045, side: THREE.DoubleSide, depthWrite: false }));
+      ray.position.set(-5 + i * 3.6, 2, -9 - i);
+      ray.rotation.z = 0.2;
+      this.forestWorld.add(ray);
+    }
+  }
+
+  private buildCanopyGate(y: number): void {
+    const g = new THREE.Group();
+    // Overhead canopy arch + hanging vines with a monkey
+    for (const s of [-1, 1]) this.tree(g, s * 7.5, -6, 13, 0x2f6b2f, -6);
+    const vineMat = new THREE.MeshStandardMaterial({ color: 0x3f6212, roughness: 1 });
+    for (let i = 0; i < 5; i++) {
+      const vx = -5 + i * 2.5;
+      const vine = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.03, 4.5 + (i % 3), 5), vineMat);
+      vine.position.set(vx, 4.6, -6);
+      g.add(vine);
+    }
+    // Monkey swinging on the middle vine
+    const monkey = new THREE.Group();
+    const mfur = this.furMat('#7c5a36', '#c9a877', 'plain');
+    const mbody = new THREE.Mesh(new THREE.SphereGeometry(0.3, 12, 10), mfur);
+    mbody.scale.set(0.9, 1.1, 0.85);
+    monkey.add(mbody);
+    const mhead = new THREE.Mesh(new THREE.SphereGeometry(0.2, 12, 10), mfur);
+    mhead.position.set(0, 0.42, 0);
+    monkey.add(mhead);
+    const mface = new THREE.Mesh(new THREE.SphereGeometry(0.13, 10, 8), this.furMat('#e8d5b5', '#f5ead2', 'plain'));
+    mface.position.set(0.1, 0.38, 0);
+    monkey.add(mface);
+    this.eyePair(monkey, 0.2, 0.48, 0.07, 0.024);
+    for (const s of [-1, 1]) {
+      const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.035, 0.85, 6), mfur);
+      arm.position.set(0, 0.72, s * 0.2);
+      arm.rotation.x = s * 0.5;
+      monkey.add(arm);
+      const legM = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.04, 0.6, 6), mfur);
+      legM.position.set(-0.05, -0.42, s * 0.14);
+      legM.rotation.z = 0.5;
+      monkey.add(legM);
+    }
+    const mtailCurve = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(-0.15, -0.3, 0), new THREE.Vector3(-0.5, -0.55, 0.1), new THREE.Vector3(-0.72, -0.2, 0),
+    ]);
+    monkey.add(new THREE.Mesh(new THREE.TubeGeometry(mtailCurve, 8, 0.035, 5), mfur));
+    monkey.position.set(0, 2.1, -6);
+    g.add(monkey);
+    this.wildlife.push((t) => {
+      const swing = Math.sin(t * 1.5) * (0.5 + this.pulseBoost(t) * 0.7);
+      monkey.rotation.z = swing;
+      monkey.rotation.y = this.mouseX * 0.5; // watches your cursor
+      monkey.position.x = Math.sin(t * 1.5) * 1.1;
+    });
+    // Birds crossing the canopy
+    for (let i = 0; i < 5; i++) {
+      const b = this.makeBird([0x38bdf8, 0xfbbf24, 0xfb7185, 0x4ade80, 0xa78bfa][i], 1.1);
+      g.add(b);
+      this.flyCircle(b, 0, 5.5 + (i % 2), -5, 7 + (i % 3), 0.35 + i * 0.03, i * 1.3);
+    }
+    g.add(new THREE.PointLight(0xfde68a, 70, 44, 1.7));
+    this.addZone(g, y, 0, this.forestWorld);
+  }
+
+  private buildMeadow(zoneY: number): void {
+    const g = new THREE.Group();
+    this.forestFloor(g, 0x2a4d24);
+    // Grass tufts + wildflowers
+    const grassMat = new THREE.MeshStandardMaterial({ color: 0x4c8a3f, roughness: 1, flatShading: true });
+    for (let i = 0; i < 40; i++) {
+      const tuft = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.8 + (i % 3) * 0.25, 5), grassMat);
+      tuft.position.set(((i * 37) % 17) - 8.5, -5.6, -7 + ((i * 23) % 11));
+      g.add(tuft);
+    }
+    const petalColors = [0xfda4af, 0xfde68a, 0xffffff, 0xc4b5fd];
+    for (let i = 0; i < 16; i++) {
+      const fl = new THREE.Mesh(new THREE.SphereGeometry(0.09, 8, 6),
+        new THREE.MeshBasicMaterial({ color: petalColors[i % petalColors.length] }));
+      fl.position.set(((i * 29) % 15) - 7.5, -5.35, -6 + ((i * 17) % 9));
+      g.add(fl);
+    }
+    // Deer herd: stag + does grazing (they watch you)
+    const stag = this.makeDeer(true, 0);
+    stag.position.set(-2.5, -5.9, -4);
+    g.add(stag);
+    this.graze(stag, zoneY);
+    for (let i = 0; i < 2; i++) {
+      const doe = this.makeDeer(false, i + 1);
+      doe.scale.setScalar(0.88);
+      doe.position.set(1.8 + i * 2.4, -5.9, -5.5 + i * 1.6);
+      doe.rotation.y = -0.5 + i * 0.5;
+      g.add(doe);
+      this.graze(doe, zoneY);
+    }
+    // Rabbits hopping about
+    for (let i = 0; i < 3; i++) {
+      const rb = this.makeRabbit(i);
+      g.add(rb);
+      this.hopAbout(rb, new THREE.Vector3(-5 + i * 4.2, -5.75, -2.5 - i), zoneY);
+    }
+    // Butterflies
+    for (let i = 0; i < 4; i++) {
+      const bf = new THREE.Group();
+      const wmat = new THREE.MeshBasicMaterial({ color: [0xfda4af, 0xfde68a, 0x93c5fd, 0xc4b5fd][i], side: THREE.DoubleSide, transparent: true, opacity: 0.9 });
+      for (const s of [-1, 1]) {
+        const wingB = new THREE.Mesh(new THREE.CircleGeometry(0.14, 8), wmat);
+        wingB.position.x = s * 0.12;
+        wingB.name = s < 0 ? 'wingL' : 'wingR';
+        bf.add(wingB);
+      }
+      g.add(bf);
+      this.wildlife.push((t) => {
+        bf.position.set(Math.sin(t * 0.6 + i * 2) * 5, -3.6 + Math.sin(t * 2.4 + i) * 0.5 + this.pulseBoost(t) * 1.4, -3.5 + Math.cos(t * 0.45 + i) * 2.5);
+        bf.rotation.y = t * 0.8 + i;
+        const wl = bf.getObjectByName('wingL');
+        const wr = bf.getObjectByName('wingR');
+        const flap = Math.sin(t * 16 + i * 2) * 0.9;
+        if (wl) wl.rotation.y = flap;
+        if (wr) wr.rotation.y = -flap;
+      });
+    }
+    g.add(new THREE.PointLight(0xa3e635, 65, 42, 1.6));
+    this.addZone(g, zoneY, 0, this.forestWorld);
+  }
+
+  private buildElephantGrove(zoneY: number): void {
+    const g = new THREE.Group();
+    this.forestFloor(g, 0x24401f);
+    // Waterhole
+    const pool = new THREE.Mesh(new THREE.CircleGeometry(3.6, 28),
+      new THREE.MeshPhysicalMaterial({ color: 0x2b6cb8, roughness: 0.12, clearcoat: 1, transparent: true, opacity: 0.85 }));
+    pool.rotation.x = -Math.PI / 2;
+    pool.position.set(3.8, -5.82, -4.5);
+    g.add(pool);
+    this.wildlife.push((t) => { pool.rotation.z = t * 0.03; });
+    for (const s of [-1, 1]) this.tree(g, s * 8, -7.5, 11 + (s > 0 ? 2 : 0), 0x2f6b2f);
+    // Elephant matriarch (slow walk, ear flaps, trunk sway)
+    const elephant = this.makeElephant();
+    elephant.scale.setScalar(0.92);
+    g.add(elephant);
+    const eHead = elephant.userData['head'] as THREE.Group;
+    const eLegs = elephant.userData['legs'] as THREE.Group[];
+    this.wildlife.push((t) => {
+      const boost = this.pulseBoost(t);
+      elephant.position.x = Math.sin(t * 0.07) * 3.4;
+      elephant.position.y = -5.9 + Math.abs(Math.sin(t * 1.15)) * 0.06;
+      elephant.position.z = -4.5;
+      elephant.rotation.y = Math.cos(t * 0.07) > 0 ? 0 : Math.PI;
+      eLegs.forEach((leg, i) => { leg.rotation.z = Math.sin(t * 1.15 + (i % 2) * Math.PI + Math.floor(i / 2) * 0.5) * 0.22; });
+      const trunk = eHead.getObjectByName('trunk');
+      if (trunk) { trunk.rotation.x = Math.sin(t * 0.8) * 0.16; trunk.rotation.z = Math.sin(t * 0.55) * 0.12 + boost * 0.35; } // trunk raises when you click
+      const earL = eHead.getObjectByName('earL');
+      const earR = eHead.getObjectByName('earR');
+      const flapE = Math.sin(t * 1.4) * (0.14 + boost * 0.25);
+      if (earL) earL.rotation.y = flapE;
+      if (earR) earR.rotation.y = -flapE;
+      eHead.rotation.y = this.mouseX * 0.22 * Math.max(this.nearFactor(zoneY), boost * 0.6);
+    });
+    // Fox trotting the grove edge
+    const fox = this.makeFox();
+    g.add(fox);
+    this.pace(fox, new THREE.Vector3(0, -5.9, -1.5), 5.5, 0.85, zoneY);
+    g.add(new THREE.PointLight(0x84cc16, 60, 42, 1.6));
+    this.addZone(g, zoneY, 0, this.forestWorld);
+  }
+
+  private buildPredatorTerritory(zoneY: number): void {
+    const g = new THREE.Group();
+    this.forestFloor(g, 0x1c2f18);
+    // Claw-marked boundary trees + bones: you're in their territory
+    for (const s of [-1, 1]) {
+      this.tree(g, s * 6.4, -6.5, 10.5, 0x27632c);
+      const scratchMat = new THREE.MeshBasicMaterial({ color: 0xe7dcc8 });
+      for (let k = 0; k < 3; k++) {
+        const scratch = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.85, 0.012), scratchMat);
+        scratch.position.set(s * 6.4 - s * 0.42, -2.6 + k * 0.12, -5.9);
+        scratch.rotation.z = 0.28;
+        g.add(scratch);
+      }
+    }
+    const boneMat = new THREE.MeshStandardMaterial({ color: 0xe7e5e4, roughness: 0.8 });
+    for (let i = 0; i < 5; i++) {
+      const bone = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.65, 6), boneMat);
+      bone.rotation.set(Math.PI / 2.2, 0, i * 1.2);
+      bone.position.set(-3.5 + i * 1.6, -5.7, -2.2 - (i % 2));
+      g.add(bone);
+    }
+    // Tiger pacing its territory — it watches YOU
+    const tiger = this.makeTiger();
+    tiger.scale.setScalar(1.15);
+    g.add(tiger);
+    this.pace(tiger, new THREE.Vector3(0, -5.9, -4.2), 5.2, 0.55, zoneY, true);
+    // Wolf pack on the rocks
+    const wolfPositions: [number, number, number][] = [[-4.6, -4.6, -6.5], [-3.4, -4.2, -7.4], [4.8, -4.5, -6.8]];
+    for (let wi = 0; wi < 3; wi++) {
+      const wolf = new THREE.Group();
+      const wfur = this.furMat('#6f6a63', '#a8a29e', 'plain');
+      const wbody = new THREE.Mesh(this.fishBodyGeo(1.65, 0.68, 0.46), wfur);
+      wbody.position.y = 0.85;
+      wolf.add(wbody);
+      const whead = new THREE.Group();
+      whead.position.set(0.85, 1.08, 0);
+      const wskull = new THREE.Mesh(new THREE.SphereGeometry(0.21, 14, 10), wfur);
+      wskull.scale.set(1.2, 0.9, 0.85);
+      whead.add(wskull);
+      const wsnout = new THREE.Mesh(new THREE.ConeGeometry(0.09, 0.38, 8), wfur);
+      wsnout.rotation.z = -Math.PI / 2;
+      wsnout.position.set(0.3, -0.06, 0);
+      whead.add(wsnout);
+      this.eyePair(whead, 0.15, 0.06, 0.13, 0.03);
+      for (const s of [-1, 1]) {
+        const wear = new THREE.Mesh(new THREE.ConeGeometry(0.07, 0.24, 4), wfur);
+        wear.position.set(-0.08, 0.2, s * 0.12);
+        whead.add(wear);
+      }
+      wolf.add(whead);
+      const wtail = new THREE.Mesh(new THREE.ConeGeometry(0.09, 0.55, 6), wfur);
+      wtail.position.set(-0.9, 0.95, 0);
+      wtail.rotation.z = 0.9;
+      wolf.add(wtail);
+      for (const [lx, lz] of [[0.55, 0.18], [0.55, -0.18], [-0.55, 0.18], [-0.55, -0.18]] as const) {
+        this.leg(wolf, lx, 0.82, lz, 0.8, 0.05, wfur);
+      }
+      wolf.position.set(...wolfPositions[wi]);
+      wolf.rotation.y = 0.4 - wi * 0.35;
+      g.add(wolf);
+      this.wildlife.push((t) => {
+        // Periodic howl: head tilts up together; heads track your cursor between howls
+        const howl = Math.max(0, Math.sin(t * 0.24 + wi * 0.35));
+        const howling = howl > 0.93 ? 1 : 0;
+        whead.rotation.z = -howling * 0.65 + this.pulseBoost(t) * -0.3;
+        whead.rotation.y = howling ? 0 : this.mouseX * 0.7;
+        wolf.position.y = wolfPositions[wi][1] + this.pulseBoost(t) * Math.abs(Math.sin(t * 8 + wi)) * 0.15;
+      });
+    }
+    g.add(new THREE.PointLight(0xd97706, 55, 42, 1.6));
+    this.addZone(g, zoneY, 0, this.forestWorld);
+  }
+
+  private buildNocturnalRuins(zoneY: number): void {
+    const g = new THREE.Group();
+    this.forestFloor(g, 0x16240f);
+    // Ancient stone ruins
+    const stoneMat = this.rockMat(0x6b6257);
+    for (let i = 0; i < 6; i++) {
+      const block = new THREE.Mesh(new THREE.BoxGeometry(1.4 + (i % 3) * 0.5, 0.8 + (i % 2) * 0.5, 1.1), stoneMat);
+      block.position.set(-6 + i * 2.3, -5.5 + (i % 2) * 0.35, -7.5);
+      block.rotation.y = i * 0.5;
+      g.add(block);
+    }
+    for (const px of [-5.2, 5.2]) {
+      const col = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.58, 6.4, 10), stoneMat);
+      col.position.set(px, -2.7, -7.2);
+      g.add(col);
+    }
+    const lintel = new THREE.Mesh(new THREE.BoxGeometry(11.6, 0.8, 1.2), stoneMat);
+    lintel.position.set(0, 0.7, -7.2);
+    lintel.rotation.z = 0.02;
+    g.add(lintel);
+    // Bear ambling by the ruins (rears up when you click)
+    const bear = this.makeBear();
+    g.add(bear);
+    const bHead = bear.userData['head'] as THREE.Group;
+    this.pace(bear, new THREE.Vector3(0, -5.9, -3.4), 4.2, 0.34, zoneY);
+    this.wildlife.push((t) => {
+      const boost = this.pulseBoost(t);
+      bear.scale.y = 1 + boost * 0.14; // rears up
+      bear.rotation.x = -boost * 0.1;
+      bHead.rotation.y = this.mouseX * 0.45;
+    });
+    // Owls on the lintel — heads follow your cursor
+    for (let i = 0; i < 2; i++) {
+      const owl = this.makeOwl();
+      owl.position.set(-2.6 + i * 4.6, 1.1, -7);
+      owl.scale.setScalar(1.25);
+      g.add(owl);
+      const oHead = owl.userData['head'] as THREE.Group;
+      this.wildlife.push((t) => {
+        oHead.rotation.y = this.mouseX * 1.15; // owl head tracking
+        oHead.rotation.x = this.mouseY * 0.3;
+        if (this.pulseBoost(t) > 0.6 && i === 0) owl.position.y = 1.1 + (this.pulseBoost(t) - 0.6) * 2.2; // startles up
+      });
+    }
+    // Snake slithering through the grass
+    const snake = new THREE.Group();
+    const snakeMat = this.furMat('#4d7c0f', '#365314', 'bands', 'rgba(220,252,180,0.5)');
+    const segments: THREE.Mesh[] = [];
+    for (let i = 0; i < 9; i++) {
+      const seg = new THREE.Mesh(new THREE.SphereGeometry(0.16 - i * 0.008, 10, 8), snakeMat);
+      seg.scale.set(1.35, 0.62, 0.9);
+      snake.add(seg);
+      segments.push(seg);
+    }
+    const sHead = new THREE.Mesh(new THREE.SphereGeometry(0.15, 10, 8), snakeMat);
+    sHead.scale.set(1.4, 0.7, 0.95);
+    snake.add(sHead);
+    segments.push(sHead);
+    g.add(snake);
+    this.wildlife.push((t) => {
+      for (let i = 0; i < segments.length; i++) {
+        const tt = t * 1.6 - i * 0.42;
+        segments[i].position.set(Math.sin(tt * 0.75) * 3.4 + Math.cos(tt * 0.22) * 1.4, -5.72, -2 + Math.sin(tt) * 0.55 - i * 0.05);
+      }
+      void zoneY;
+    });
+    g.add(new THREE.PointLight(0xa3e635, 50, 42, 1.7));
+    this.addZone(g, zoneY, 0, this.forestWorld);
+  }
+
+  private buildSunriseClearing(zoneY: number): void {
+    const g = new THREE.Group();
+    this.forestFloor(g, 0x2f4d22);
+    // Golden sunrise gate
+    const gate = new THREE.Mesh(new THREE.TorusGeometry(6.2, 0.2, 16, 90),
+      new THREE.MeshStandardMaterial({ color: 0xfbbf24, emissive: 0xf59e0b, emissiveIntensity: 1.5, roughness: 0.4 }));
+    gate.position.z = -7;
+    g.add(gate);
+    const glow = new THREE.Mesh(new THREE.CircleGeometry(5.9, 48),
+      new THREE.MeshBasicMaterial({ color: 0xfef3c7, transparent: true, opacity: 0.3, side: THREE.DoubleSide }));
+    glow.position.z = -7;
+    g.add(glow);
+    this.wildlife.push((t) => { glow.material.opacity = 0.24 + Math.sin(t * 2) * 0.06; });
+    for (const s of [-1, 1]) this.tree(g, s * 8.4, -7, 12.5, 0x3d7a35);
+    // Dawn chorus: birds everywhere + a deer family seeing you off
+    for (let i = 0; i < 6; i++) {
+      const b = this.makeBird([0xfbbf24, 0x38bdf8, 0xfb7185, 0x4ade80, 0xa78bfa, 0xf97316][i], 1.15);
+      g.add(b);
+      this.flyCircle(b, 0, 3.8 + (i % 3), -5, 6.4 + (i % 3), 0.4 + i * 0.025, i * 1.05);
+    }
+    const stag = this.makeDeer(true, 5);
+    stag.position.set(-3.6, -5.9, -4.6);
+    stag.rotation.y = 0.5;
+    g.add(stag);
+    this.graze(stag, zoneY);
+    const fawn = this.makeDeer(false, 6);
+    fawn.scale.setScalar(0.55);
+    fawn.position.set(-2.2, -5.9, -3.6);
+    g.add(fawn);
+    this.graze(fawn, zoneY);
+    g.add(new THREE.PointLight(0xfbbf24, 85, 48, 1.5));
+    this.addZone(g, zoneY, 0, this.forestWorld);
   }
 
   // ══ OCEAN THEME ═══════════════════════════════════════════════════════
@@ -1311,6 +2170,21 @@ export class JourneyCanvasComponent implements AfterViewInit, OnDestroy {
     this.onScroll();
   };
 
+  private onPointerDown = (): void => {
+    this.pulseT = this.clock.getElapsedTime();
+  };
+
+  /** 0..1 interaction burst right after the user clicks/taps. */
+  private pulseBoost(t: number): number {
+    const age = t - this.pulseT;
+    return age >= 0 && age < 1.4 ? Math.sin((age / 1.4) * Math.PI) : 0;
+  }
+
+  /** How close the camera is to a depth (for animal alertness). */
+  private nearFactor(y: number): number {
+    return Math.max(0, 1 - Math.abs(y - this.camYCurrent) / 26);
+  }
+
   private onMouseMove = (e: MouseEvent): void => {
     this.targetMouseX = (e.clientX / window.innerWidth) * 2 - 1;
     this.targetMouseY = (e.clientY / window.innerHeight) * 2 - 1;
@@ -1335,7 +2209,7 @@ export class JourneyCanvasComponent implements AfterViewInit, OnDestroy {
     );
     this.camera.lookAt(this.mouseX * 2.4, camY - 5.4 + this.mouseY * -0.7, -2);
     if (this.headlamp) {
-      const base = this.themeService.theme() === 'ocean' ? 55 : 74;
+      const base = this.themeService.theme() === 'ocean' ? 55 : this.themeService.theme() === 'forest' ? 66 : 74;
       this.headlamp.intensity = base + Math.sin(t * 2.1) * 7; // lamp flicker
     }
 
@@ -1353,21 +2227,24 @@ export class JourneyCanvasComponent implements AfterViewInit, OnDestroy {
     const theme = this.themeService.theme();
     if (theme !== this.lastTheme) {
       this.lastTheme = theme;
-      const ocean = theme === 'ocean';
-      if (this.undergroundWorld) this.undergroundWorld.visible = !ocean;
-      if (this.oceanWorld) this.oceanWorld.visible = ocean;
+      if (this.undergroundWorld) this.undergroundWorld.visible = theme === 'underground';
+      if (this.oceanWorld) this.oceanWorld.visible = theme === 'ocean';
+      if (this.forestWorld) this.forestWorld.visible = theme === 'forest';
       if (this.scene?.fog instanceof THREE.FogExp2) {
-        this.scene.fog.color.set(ocean ? 0x03263d : 0x0b0705);
-        this.scene.fog.density = ocean ? 0.011 : 0.0155;
+        this.scene.fog.color.set(theme === 'ocean' ? 0x03263d : theme === 'forest' ? 0x08170a : 0x0b0705);
+        this.scene.fog.density = theme === 'ocean' ? 0.011 : theme === 'forest' ? 0.0125 : 0.0155;
       }
       if (this.headlamp) {
-        this.headlamp.color.set(ocean ? 0x7dd3fc : 0xffc98a); // miner's lamp warmth underground
-        this.headlamp.intensity = ocean ? 60 : 78;
+        this.headlamp.color.set(theme === 'ocean' ? 0x7dd3fc : theme === 'forest' ? 0xffe9b8 : 0xffc98a);
       }
     }
     if (theme === 'ocean') {
       for (const swim of this.swimmers) swim(t);
     }
+    if (theme === 'forest') {
+      for (const act of this.wildlife) act(t);
+    }
+    this.camYCurrent = camY;
 
     // Ambient particle drift
     if (this.dust) {

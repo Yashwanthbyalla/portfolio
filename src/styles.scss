@@ -367,6 +367,52 @@ html[data-theme='ocean'] .gate-label { color: #67e8f9 !important; }
 html[data-theme='ocean'] .filter-active { background: rgba(8,145,178,0.25) !important; border-color: rgba(103,232,249,0.5) !important; }
 html[data-theme='ocean'] input:focus, html[data-theme='ocean'] textarea:focus { border-color: rgba(103,232,249,0.55) !important; }
 
+/* ═══ FOREST THEME SKIN (html[data-theme='forest']) ═════════════════════ */
+html[data-theme='forest'] body {
+  background-image:
+    radial-gradient(ellipse 100% 60% at 50% 0%, rgba(34,197,94,0.17) 0%, transparent 65%),
+    radial-gradient(ellipse 60% 40% at 90% 80%, rgba(163,230,53,0.09) 0%, transparent 60%),
+    linear-gradient(to bottom, #0a1f0d 0%, #07170b 48%, #041008 100%);
+}
+html[data-theme='forest'] .card {
+  background: rgba(12, 34, 16, 0.64);
+  border-color: rgba(134,239,172,0.16);
+}
+html[data-theme='forest'] .card:hover {
+  border-color: rgba(74,222,128,0.45);
+  box-shadow: 0 16px 48px rgba(0,0,0,0.5), 0 0 30px rgba(34,197,94,0.2), inset 0 1px 0 rgba(255,255,255,0.08);
+}
+html[data-theme='forest'] .grad { background-image: linear-gradient(to right, #4ade80, #a3e635, #fbbf24) !important; }
+html[data-theme='forest'] .section-eyebrow { color: #86efac !important; }
+html[data-theme='forest'] .divider { background-image: linear-gradient(to right, #16a34a, #a3e635) !important; }
+html[data-theme='forest'] .btn-primary {
+  background-image: linear-gradient(to right, #15803d, #65a30d) !important;
+  box-shadow: 0 0 22px rgba(34,197,94,0.35);
+}
+html[data-theme='forest'] .btn-primary:hover { background-image: linear-gradient(to right, #16a34a, #84cc16) !important; }
+html[data-theme='forest'] .btn-ghost:hover { border-color: rgba(134,239,172,0.5) !important; }
+html[data-theme='forest'] .tag {
+  background: rgba(21,128,61,0.18) !important; color: #bbf7d0 !important; border-color: rgba(74,222,128,0.3) !important;
+}
+html[data-theme='forest'] .tag-yellow {
+  background: rgba(202,138,4,0.14) !important; color: #fde68a !important; border-color: rgba(250,204,21,0.3) !important;
+}
+html[data-theme='forest'] .ambient-blob-1 { background: radial-gradient(circle, rgba(34,197,94,0.32), transparent 70%); }
+html[data-theme='forest'] .ambient-blob-2 { background: radial-gradient(circle, rgba(163,230,53,0.22), transparent 70%); }
+html[data-theme='forest'] .ambient-blob-3 { background: radial-gradient(circle, rgba(21,128,61,0.28), transparent 70%); }
+html[data-theme='forest'] .scroll-progress { background: linear-gradient(90deg, #16a34a, #a3e635, #fbbf24) !important; box-shadow: 0 0 10px rgba(74,222,128,0.8) !important; }
+html[data-theme='forest'] .logo-mark { background: linear-gradient(135deg, #15803d, #a3e635) !important; box-shadow: 0 0 16px rgba(34,197,94,0.55) !important; }
+html[data-theme='forest'] .nav-link.active { background: rgba(21,128,61,0.2) !important; }
+html[data-theme='forest'] footer::before { background: linear-gradient(90deg, transparent, rgba(74,222,128,0.65), rgba(163,230,53,0.65), transparent); background-size: 200% 100%; }
+html[data-theme='forest'] ::selection { background: rgba(21,128,61,0.55); }
+html[data-theme='forest'] ::-webkit-scrollbar-thumb { background: rgba(21,128,61,0.8) !important; }
+html[data-theme='forest'] .hud-fill,
+html[data-theme='forest'] .hud-mobile-fill { background: linear-gradient(to bottom, #16a34a, #a3e635, #fbbf24) !important; }
+html[data-theme='forest'] .hud-dot.on { background: rgba(21,128,61,0.42) !important; border-color: #86efac !important; box-shadow: 0 0 14px rgba(74,222,128,0.8) !important; }
+html[data-theme='forest'] .gate-label { color: #a3e635 !important; }
+html[data-theme='forest'] .filter-active { background: rgba(21,128,61,0.28) !important; border-color: rgba(134,239,172,0.5) !important; }
+html[data-theme='forest'] input:focus, html[data-theme='forest'] textarea:focus { border-color: rgba(134,239,172,0.55) !important; }
+
 /* Respect users who prefer reduced motion */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

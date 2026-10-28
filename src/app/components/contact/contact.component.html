@@ -2,7 +2,7 @@
   <div class="section-wrap section-py">
 
     <div appScrollReveal class="mb-10 sm:mb-14">
-      <p class="section-eyebrow">{{ themeService.theme() === 'ocean' ? '☀️ Final Chapter · 1500m — Sunlight Exit · Get In Touch' : '🚪 Final Chapter · 1500m — Exit Portal · Get In Touch' }}</p>
+      <p class="section-eyebrow">{{ themeService.theme() === 'forest' ? '🌅 Final Chapter · 1500m — Sunrise Clearing · Get In Touch' : themeService.theme() === 'ocean' ? '☀️ Final Chapter · 1500m — Sunlight Exit · Get In Touch' : '🚪 Final Chapter · 1500m — Exit Portal · Get In Touch' }}</p>
       <h2 class="section-title">Let's <span class="grad">Create Together</span></h2>
       <div class="divider"></div>
       <p class="text-gray-400 text-sm sm:text-base max-w-xl leading-relaxed">{{ contact.intro }}</p>

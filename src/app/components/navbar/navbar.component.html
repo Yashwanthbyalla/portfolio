@@ -25,16 +25,20 @@
 
       <!-- Theme switcher + CTA + hamburger -->
       <div class="flex items-center gap-2 sm:gap-3">
-        <button
-          type="button"
-          class="theme-switch"
-          (click)="themeService.toggle()"
-          [attr.aria-label]="themeService.theme() === 'underground' ? 'Switch to Ocean theme' : 'Switch to Underground theme'"
-          [title]="themeService.theme() === 'underground' ? 'Switch to Ocean theme' : 'Switch to Underground theme'"
-        >
-          <span class="theme-switch-icon">{{ themeService.theme() === 'underground' ? '🌊' : '🌌' }}</span>
-          <span class="theme-switch-label hidden sm:inline">{{ themeService.theme() === 'underground' ? 'Ocean' : 'Underground' }}</span>
-        </button>
+        <div class="theme-switch" role="group" aria-label="Choose theme">
+          <button type="button" class="theme-opt" [class.on]="themeService.theme() === 'underground'"
+                  (click)="themeService.set('underground')" title="Underground theme" aria-label="Underground theme">
+            <span class="theme-switch-icon">🌌</span><span class="theme-switch-label hidden xl:inline">Mine</span>
+          </button>
+          <button type="button" class="theme-opt" [class.on]="themeService.theme() === 'ocean'"
+                  (click)="themeService.set('ocean')" title="Ocean theme" aria-label="Ocean theme">
+            <span class="theme-switch-icon">🌊</span><span class="theme-switch-label hidden xl:inline">Ocean</span>
+          </button>
+          <button type="button" class="theme-opt" [class.on]="themeService.theme() === 'forest'"
+                  (click)="themeService.set('forest')" title="Forest theme" aria-label="Forest theme">
+            <span class="theme-switch-icon">🌲</span><span class="theme-switch-label hidden xl:inline">Forest</span>
+          </button>
+        </div>
         <a href="#contact" class="hidden lg:inline-flex btn btn-primary !py-2 !px-5 !text-sm">
           Hire Me
         </a>

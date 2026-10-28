@@ -1,6 +1,6 @@
 import { Injectable, signal } from '@angular/core';
 
-export type AppTheme = 'underground' | 'ocean';
+export type AppTheme = 'underground' | 'ocean' | 'forest';
 
 const STORAGE_KEY = 'portfolio-theme';
 
@@ -12,13 +12,15 @@ export class ThemeService {
   constructor() {
     if (typeof window !== 'undefined') {
       const saved = window.localStorage.getItem(STORAGE_KEY);
-      if (saved === 'ocean' || saved === 'underground') this.theme.set(saved);
+      if (saved === 'ocean' || saved === 'underground' || saved === 'forest') this.theme.set(saved);
       document.documentElement.dataset['theme'] = this.theme();
     }
   }
 
   toggle(): void {
-    this.set(this.theme() === 'underground' ? 'ocean' : 'underground');
+    const order: AppTheme[] = ['underground', 'ocean', 'forest'];
+    const next = order[(order.indexOf(this.theme()) + 1) % order.length];
+    this.set(next);
   }
 
   set(theme: AppTheme): void {
