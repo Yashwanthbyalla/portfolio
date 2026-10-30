@@ -72,7 +72,8 @@ import { AmbientAudioService } from '../../services/ambient-audio.service';
     .hub-close { width: 38px; height: 38px; flex: none; border-radius: 50%; border: 1px solid rgba(255,255,255,0.16); background: rgba(255,255,255,0.06); color: #fff; cursor: pointer; }
     .hub-close:hover { background: rgba(255,255,255,0.14); transform: rotate(90deg); }
     .hub-grid { display: grid; gap: 16px; grid-template-columns: 1fr; }
-    @media (min-width: 760px) { .hub-grid { grid-template-columns: repeat(3, 1fr); } }
+    @media (min-width: 760px) { .hub-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (min-width: 1080px) { .hub-grid { grid-template-columns: repeat(4, 1fr); } .hub-panel { width: min(1180px, 100%); } }
     .world-card { border-radius: 18px; padding: 18px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); display: flex; flex-direction: column; gap: 10px; transition: transform .25s ease, border-color .25s ease; }
     .world-card:hover { transform: translateY(-4px); }
     .world-card.current { border-color: rgba(255,255,255,0.45); box-shadow: 0 0 0 1px rgba(255,255,255,0.2), 0 14px 34px rgba(0,0,0,0.4); }
@@ -80,6 +81,7 @@ import { AmbientAudioService } from '../../services/ambient-audio.service';
     .world-underground .world-banner { background: radial-gradient(circle at 50% 120%, #f59e0b55, transparent 65%), linear-gradient(160deg,#1e1b4b,#090914); }
     .world-ocean .world-banner { background: radial-gradient(circle at 50% -20%, #7dd3fc66, transparent 60%), linear-gradient(160deg,#075985,#02182b); }
     .world-forest .world-banner { background: radial-gradient(circle at 50% -20%, #fde68a55, transparent 55%), linear-gradient(160deg,#166534,#04170b); }
+    .world-space .world-banner { background: radial-gradient(circle at 50% 120%, #ec489955, transparent 60%), radial-gradient(circle at 80% 0%, #22d3ee44, transparent 55%), linear-gradient(160deg,#2e1065,#020108); }
     .world-icon { font-size: 42px; animation: hubBob 3s ease-in-out infinite; }
     .world-card h3 { margin: 0; color: #fff; font-size: 19px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
     .here { font-size: 11px; color: #86efac; letter-spacing: .04em; }
@@ -89,6 +91,7 @@ import { AmbientAudioService } from '../../services/ambient-audio.service';
     .world-underground .world-enter { background: linear-gradient(90deg,#4f46e5,#7c3aed); color: #fff; }
     .world-ocean .world-enter { background: linear-gradient(90deg,#0369a1,#0891b2); color: #fff; }
     .world-forest .world-enter { background: linear-gradient(90deg,#15803d,#65a30d); color: #fff; }
+    .world-space .world-enter { background: linear-gradient(90deg,#6d28d9,#0891b2); color: #fff; }
     .world-enter:disabled { opacity: .55; cursor: default; }
     .hub-foot { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; justify-content: space-between; margin-top: 20px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.09); }
     .hub-sound { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 10px 14px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.14); background: rgba(255,255,255,0.05); color: #fff; font-weight: 700; cursor: pointer; }
@@ -108,7 +111,7 @@ export class ThemeHubComponent {
 
   get phaseMeta() { return PHASE_META[this.themeService.phase()]; }
   get soundHint(): string {
-    return { underground: 'Ambient music with soft echoing cave drips', ocean: 'Ambient music with gentle waves, whale & dolphin', forest: this.themeService.isNight() ? 'Ambient music with crickets & a distant owl' : 'Ambient music with gentle birdsong' }[this.themeService.theme()];
+    return { underground: 'Ambient music with soft echoing cave drips', ocean: 'Ambient music with gentle waves, whale & dolphin', forest: this.themeService.isNight() ? 'Ambient music with crickets & a distant owl' : 'Ambient music with gentle birdsong', space: 'Space ambience: suit breathing, radio & satellite beeps' }[this.themeService.theme()];
   }
 
   show(): void { this.themeService.openHub(); }

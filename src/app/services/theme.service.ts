@@ -1,6 +1,6 @@
 import { Injectable, computed, signal } from '@angular/core';
 
-export type AppTheme = 'underground' | 'ocean' | 'forest';
+export type AppTheme = 'underground' | 'ocean' | 'forest' | 'space';
 export type DayPhase = 'dawn' | 'day' | 'dusk' | 'night';
 
 const STORAGE_KEY = 'portfolio-theme';
@@ -17,6 +17,10 @@ export const THEME_META: Record<AppTheme, { icon: string; label: string; tagline
   forest: {
     icon: '🌲', label: 'Forest', tagline: 'Trek wild territories — the animals are watching you',
     chapters: ['Canopy Gate', 'Meadow Clearing', 'Elephant Grove', 'Predator Territory', 'Nocturnal Ruins', 'Sunrise Clearing'], accent: '#4ade80',
+  },
+  space: {
+    icon: '🚀', label: 'Space', tagline: 'Launch from orbit to an alien world — and out through a wormhole',
+    chapters: ['Low Orbit', 'Moon Base', 'Asteroid Belt', 'Nebula Drift', 'Alien Planet', 'Wormhole Exit'], accent: '#a78bfa',
   },
 };
 
@@ -48,7 +52,7 @@ export class ThemeService {
   constructor() {
     if (typeof window !== 'undefined') {
       const saved = window.localStorage.getItem(STORAGE_KEY);
-      if (saved === 'ocean' || saved === 'underground' || saved === 'forest') this.theme.set(saved);
+      if (saved === 'ocean' || saved === 'underground' || saved === 'forest' || saved === 'space') this.theme.set(saved);
       this.applyPhase();
       document.documentElement.dataset['theme'] = this.theme();
       // Re-evaluate the sky every minute so the world drifts with real time.
@@ -79,7 +83,7 @@ export class ThemeService {
   }
 
   toggle(): void {
-    const order: AppTheme[] = ['underground', 'ocean', 'forest'];
+    const order: AppTheme[] = ['underground', 'ocean', 'forest', 'space'];
     const next = order[(order.indexOf(this.theme()) + 1) % order.length];
     this.set(next);
   }

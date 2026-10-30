@@ -68,8 +68,10 @@ export class JourneyCanvasComponent implements AfterViewInit, OnDestroy {
   private undergroundWorld?: THREE.Group;
   private oceanWorld?: THREE.Group;
   private forestWorld?: THREE.Group;
+  private spaceWorld?: THREE.Group;
   private readonly swimmers: ((t: number) => void)[] = [];
   private readonly wildlife: ((t: number) => void)[] = [];
+  private readonly spaceCrew: ((t: number) => void)[] = [];
   private lastTheme = '';
   private lastPhase = '';
   private ambientLight?: THREE.AmbientLight;
@@ -134,7 +136,8 @@ export class JourneyCanvasComponent implements AfterViewInit, OnDestroy {
     this.undergroundWorld = new THREE.Group();
     this.oceanWorld = new THREE.Group();
     this.forestWorld = new THREE.Group();
-    this.scene.add(this.undergroundWorld, this.oceanWorld, this.forestWorld);
+    this.spaceWorld = new THREE.Group();
+    this.scene.add(this.undergroundWorld, this.oceanWorld, this.forestWorld, this.spaceWorld);
 
     this.buildSurface();
     this.buildShaft();
@@ -146,6 +149,7 @@ export class JourneyCanvasComponent implements AfterViewInit, OnDestroy {
     this.buildParticles(reduced);
     this.buildOcean();
     this.buildForest();
+    this.buildSpace();
     this.applyViewLayout();
 
     this.onScroll();
@@ -1446,6 +1450,431 @@ export class JourneyCanvasComponent implements AfterViewInit, OnDestroy {
     this.addZone(g, zoneY, 0, this.forestWorld);
   }
 
+  // ══ SPACE THEME ═══════════════════════════════════════════════════════
+  private buildSpace(): void {
+    if (!this.spaceWorld) return;
+    this.buildSpaceEnvironment();
+    this.buildOrbit(0);
+    this.buildMoonBase(-38);
+    this.buildAsteroidBelt(-68);
+    this.buildNebula(-98);
+    this.buildAlienPlanet(-128);
+    this.buildWormhole(-158);
+  }
+
+  private smat(color: number, metalness = 0.7, roughness = 0.35, emissive = 0x000000, ei = 0): THREE.MeshStandardMaterial {
+    return new THREE.MeshStandardMaterial({ color, metalness, roughness, emissive, emissiveIntensity: ei });
+  }
+
+  /** Floating astronaut: white suit, gold visor, waving arm refs in userData. */
+  private makeAstronaut(scale = 1): THREE.Group {
+    const a = new THREE.Group();
+    const suit = this.smat(0xf1f5f9, 0.15, 0.6);
+    const accent = this.smat(0xdc2626, 0.3, 0.5);
+    const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.34, 0.55, 6, 12), suit);
+    body.position.y = 0.95; a.add(body);
+    const chest = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.3, 0.12), this.smat(0xcbd5e1, 0.4, 0.4));
+    chest.position.set(0, 1.05, 0.34); a.add(chest);
+    for (const c of [0x38bdf8, 0xf87171, 0x4ade80]) {
+      const dot = new THREE.Mesh(new THREE.SphereGeometry(0.035, 8, 6), this.smat(c, 0.2, 0.3, c, 1.6));
+      dot.position.set(-0.1 + [0x38bdf8, 0xf87171, 0x4ade80].indexOf(c) * 0.1, 1.1, 0.41); a.add(dot);
+    }
+    const pack = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.65, 0.22), this.smat(0x94a3b8, 0.6, 0.4));
+    pack.position.set(0, 1.05, -0.32); a.add(pack);
+    const helmet = new THREE.Group(); helmet.position.y = 1.75; a.add(helmet);
+    const shell = new THREE.Mesh(new THREE.SphereGeometry(0.34, 18, 14), suit); helmet.add(shell);
+    const visor = new THREE.Mesh(new THREE.SphereGeometry(0.29, 18, 14),
+      new THREE.MeshPhysicalMaterial({ color: 0xf59e0b, metalness: 0.9, roughness: 0.12, clearcoat: 1 }));
+    visor.scale.set(0.85, 0.72, 0.6); visor.position.set(0, 0.02, 0.15); helmet.add(visor);
+    const limbs: THREE.Group[] = [];
+    for (const s of [-1, 1]) {
+      const arm = new THREE.Group(); arm.position.set(s * 0.4, 1.32, 0);
+      const armMesh = new THREE.Mesh(new THREE.CapsuleGeometry(0.11, 0.42, 4, 8), suit);
+      armMesh.position.y = -0.3; arm.add(armMesh);
+      const glove = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 8), accent);
+      glove.position.y = -0.62; arm.add(glove);
+      arm.rotation.z = s * 0.5; a.add(arm); limbs.push(arm);
+      const legG = new THREE.Group(); legG.position.set(s * 0.18, 0.55, 0);
+      const legMesh = new THREE.Mesh(new THREE.CapsuleGeometry(0.13, 0.4, 4, 8), suit);
+      legMesh.position.y = -0.3; legG.add(legMesh);
+      const boot = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.12, 0.3), this.smat(0x475569, 0.4, 0.6));
+      boot.position.set(0, -0.6, 0.05); legG.add(boot);
+      legG.rotation.x = s * 0.25; a.add(legG); limbs.push(legG);
+    }
+    a.userData['helmet'] = helmet;
+    a.userData['armR'] = limbs[1];
+    a.userData['limbs'] = limbs;
+    a.scale.setScalar(scale);
+    return a;
+  }
+
+  /** Zero-g float: bob + slow tumble + wave; click = drift burst away & spin. */
+  private floatAstronaut(a: THREE.Group, home: THREE.Vector3, zoneY: number, seed = 0): void {
+    const helmet = a.userData['helmet'] as THREE.Group;
+    const armR = a.userData['armR'] as THREE.Group;
+    this.spaceCrew.push((t) => {
+      const pulse = this.pulseBoost(t);
+      const near = this.nearFactor(zoneY);
+      a.position.set(
+        home.x + Math.sin(t * 0.4 + seed) * 0.5 + pulse * 2.2,
+        home.y + Math.sin(t * 0.7 + seed * 2) * 0.45 + pulse * 1.2,
+        home.z + Math.cos(t * 0.3 + seed) * 0.3,
+      );
+      a.rotation.set(Math.sin(t * 0.35 + seed) * 0.18 + pulse * 1.4, Math.sin(t * 0.22 + seed) * 0.5 + pulse * 2.2, Math.cos(t * 0.28 + seed) * 0.14);
+      if (helmet) helmet.rotation.y = this.mouseX * 0.55; // watches your cursor
+      if (armR) armR.rotation.z = -2.2 + Math.sin(t * (2.2 + near * 2.5)) * (0.35 + near * 0.4); // waves harder as you near
+    });
+  }
+
+  private makeSatellite(scale = 1): THREE.Group {
+    const s = new THREE.Group();
+    const bus = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.7, 1.1), this.smat(0xd6d3d1, 0.85, 0.3));
+    s.add(bus);
+    const dish = new THREE.Mesh(new THREE.ConeGeometry(0.42, 0.3, 14, 1, true), this.smat(0xe7e5e4, 0.7, 0.35));
+    dish.rotation.x = Math.PI / 2.4; dish.position.set(0, -0.2, 0.7); s.add(dish);
+    for (const side of [-1, 1]) {
+      const panel = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.04, 0.85),
+        new THREE.MeshPhysicalMaterial({ color: 0x1d4ed8, metalness: 0.7, roughness: 0.25, clearcoat: 0.8 }));
+      panel.position.x = side * 1.25; s.add(panel);
+      const strut = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.85, 6), this.smat(0x78716c, 0.8, 0.4));
+      strut.rotation.z = Math.PI / 2; strut.position.x = side * 0.6; s.add(strut);
+    }
+    const beacon = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 8), this.smat(0xef4444, 0.2, 0.3, 0xef4444, 2.5));
+    beacon.position.y = 0.45; s.add(beacon);
+    s.userData['beacon'] = beacon;
+    s.scale.setScalar(scale);
+    return s;
+  }
+
+  private orbitSatellite(s: THREE.Group, cx: number, cy: number, cz: number, r: number, speed: number, phase: number, zoneY: number): void {
+    const beacon = s.userData['beacon'] as THREE.Mesh;
+    this.spaceCrew.push((t) => {
+      const ang = phase + t * speed + this.pulseBoost(t) * 1.5; // click nudges its orbit — zero-g drift
+      s.position.set(cx + Math.cos(ang) * r, cy + Math.sin(t * 0.6 + phase) * 0.5, cz + Math.sin(ang) * r * 0.45);
+      s.rotation.y = -ang;
+      s.rotation.z = Math.sin(t * 0.5 + phase) * 0.12;
+      if (beacon) (beacon.material as THREE.MeshStandardMaterial).emissiveIntensity = 1.2 + Math.sin(t * 4 + phase) * 1.6 + this.nearFactor(zoneY) * 1.5;
+    });
+  }
+
+  /** Grey alien: oversized head, huge glinting eyes, waving arm; head tracks your cursor. */
+  private makeAlien(scale = 1, tint = 0x86efac): THREE.Group {
+    const alien = new THREE.Group();
+    const skin = new THREE.MeshPhysicalMaterial({ color: tint, roughness: 0.45, clearcoat: 0.6 });
+    const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.26, 0.5, 6, 12), skin);
+    body.position.y = 0.75; alien.add(body);
+    const head = new THREE.Group(); head.position.y = 1.55; alien.add(head);
+    const skull = new THREE.Mesh(new THREE.SphereGeometry(0.42, 18, 14), skin);
+    skull.scale.set(0.92, 1.12, 0.88); head.add(skull);
+    const eyeMat = new THREE.MeshPhysicalMaterial({ color: 0x030712, roughness: 0.08, clearcoat: 1 });
+    for (const s of [-1, 1]) {
+      const eye = new THREE.Mesh(new THREE.SphereGeometry(0.115, 12, 10), eyeMat);
+      eye.scale.set(1, 1.45, 0.55);
+      eye.position.set(s * 0.17, 0.06, 0.33); eye.rotation.x = -0.25; head.add(eye);
+      const glint = new THREE.Mesh(new THREE.SphereGeometry(0.032, 6, 6), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+      glint.position.set(s * 0.13, 0.17, 0.4); head.add(glint);
+    }
+    const arms: THREE.Group[] = [];
+    for (const s of [-1, 1]) {
+      const arm = new THREE.Group(); arm.position.set(s * 0.3, 1.08, 0);
+      const armMesh = new THREE.Mesh(new THREE.CapsuleGeometry(0.07, 0.48, 4, 8), skin);
+      armMesh.position.y = -0.3; arm.add(armMesh);
+      for (let f = -1; f <= 1; f++) {
+        const finger = new THREE.Mesh(new THREE.CapsuleGeometry(0.022, 0.14, 3, 6), skin);
+        finger.position.set(f * 0.05, -0.68, 0); finger.rotation.z = f * 0.3; arm.add(finger);
+      }
+      arm.rotation.z = s * 0.4; alien.add(arm); arms.push(arm);
+      const legMesh = new THREE.Mesh(new THREE.CapsuleGeometry(0.08, 0.3, 4, 8), skin);
+      legMesh.position.set(s * 0.14, 0.22, 0); alien.add(legMesh);
+    }
+    alien.userData['head'] = head;
+    alien.userData['armR'] = arms[1];
+    alien.scale.setScalar(scale);
+    return alien;
+  }
+
+  private greetAlien(alien: THREE.Group, home: THREE.Vector3, zoneY: number, seed = 0): void {
+    const head = alien.userData['head'] as THREE.Group;
+    const armR = alien.userData['armR'] as THREE.Group;
+    this.spaceCrew.push((t) => {
+      const near = this.nearFactor(zoneY);
+      const pulse = this.pulseBoost(t);
+      alien.position.set(home.x, home.y + Math.sin(t * 1.1 + seed) * (0.08 + near * 0.12), home.z);
+      alien.rotation.y = Math.sin(t * 0.4 + seed) * 0.15;
+      if (head) { // big head follows your cursor, tilts curiously when close / clicked
+        head.rotation.y = this.mouseX * 0.7;
+        head.rotation.x = this.mouseY * 0.3 + pulse * 0.3;
+        head.rotation.z = Math.sin(t * 0.8 + seed) * 0.06 + near * 0.12;
+      }
+      if (armR) armR.rotation.z = -2.4 + Math.sin(t * (2.6 + near * 3 + pulse * 4)) * (0.3 + near * 0.45); // waves hello
+      alien.scale.setScalar((1 + near * 0.05 + pulse * 0.08) * (alien.userData['baseScale'] as number || 1));
+    });
+    alien.userData['baseScale'] = alien.scale.x;
+  }
+
+  private planetTexture(c1: string, c2: string, c3: string): THREE.CanvasTexture {
+    return this.skinTexture((ctx, w, h) => {
+      ctx.fillStyle = c1; ctx.fillRect(0, 0, w, h);
+      ctx.fillStyle = c2;
+      for (let i = 0; i < 26; i++) {
+        ctx.beginPath();
+        ctx.ellipse(Math.random() * w, Math.random() * h, 20 + Math.random() * 60, 10 + Math.random() * 26, Math.random(), 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.fillStyle = c3; ctx.globalAlpha = 0.55;
+      for (let i = 0; i < 14; i++) {
+        ctx.beginPath();
+        ctx.ellipse(Math.random() * w, Math.random() * h, 14 + Math.random() * 40, 7 + Math.random() * 16, Math.random(), 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+    });
+  }
+
+  private spaceFloor(g: THREE.Group, color: number, emissive = 0x000000): void {
+    const floor = new THREE.Mesh(new THREE.CircleGeometry(15, 40),
+      new THREE.MeshStandardMaterial({ color, roughness: 0.95, metalness: 0.05, emissive, emissiveIntensity: 0.25 }));
+    floor.rotation.x = -Math.PI / 2; floor.position.y = -3.2;
+    g.add(floor);
+  }
+
+  private buildSpaceEnvironment(): void {
+    if (!this.spaceWorld) return;
+    // Starfield through the whole descent
+    const starGeo = new THREE.BufferGeometry();
+    const pos = new Float32Array(1500 * 3);
+    for (let i = 0; i < 1500; i++) {
+      const r = 26 + Math.random() * 55;
+      const th = Math.random() * Math.PI * 2;
+      pos[i * 3] = Math.cos(th) * r;
+      pos[i * 3 + 1] = 14 - Math.random() * 185;
+      pos[i * 3 + 2] = Math.sin(th) * r - 12;
+    }
+    starGeo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    const stars = new THREE.Points(starGeo, new THREE.PointsMaterial({ color: 0xe0e7ff, size: 0.32, sizeAttenuation: true, transparent: true, opacity: 0.9 }));
+    this.spaceWorld.add(stars);
+    this.spaceCrew.push((t) => { stars.rotation.y = t * 0.004; });
+
+    // Shooting stars: bright streaks that periodically tear across the sky
+    for (let i = 0; i < 5; i++) {
+      const mat = new THREE.MeshBasicMaterial({ color: 0xbae6fd, transparent: true, opacity: 0 });
+      const streak = new THREE.Mesh(new THREE.CapsuleGeometry(0.05, 3.6, 3, 6), mat);
+      streak.rotation.z = -0.7;
+      this.spaceWorld.add(streak);
+      const seed = i * 7.3 + 2;
+      this.spaceCrew.push((t) => {
+        const cycle = (t * 0.14 + seed) % 9;
+        const active = cycle < 1.1;
+        mat.opacity = active ? Math.sin((cycle / 1.1) * Math.PI) * 0.95 : 0;
+        const y = -((seed * 29) % 160) + 8;
+        streak.position.set(-20 + cycle * 34, y - cycle * 9, -24 - (i % 3) * 6);
+      });
+    }
+  }
+
+  private buildOrbit(y: number): void {
+    const g = new THREE.Group();
+    const earth = new THREE.Mesh(new THREE.SphereGeometry(6.4, 36, 26),
+      new THREE.MeshPhysicalMaterial({ map: this.planetTexture('#1d4ed8', '#22c55e', '#e0f2fe'), roughness: 0.55, clearcoat: 0.5 }));
+    earth.position.set(-3.5, -7.6, -7); g.add(earth);
+    const clouds = new THREE.Mesh(new THREE.SphereGeometry(6.55, 32, 22),
+      new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.22, roughness: 1 }));
+    clouds.position.copy(earth.position); g.add(clouds);
+    this.spaceCrew.push((t) => { earth.rotation.y = t * 0.02; clouds.rotation.y = t * 0.032; });
+    const astro = this.makeAstronaut(1.15);
+    g.add(astro); this.floatAstronaut(astro, new THREE.Vector3(3.2, 1.4, 2), y, 1);
+    const sat = this.makeSatellite(1.1); g.add(sat);
+    this.orbitSatellite(sat, -1, 3.2, -3, 7.5, 0.22, 0, y);
+    const sat2 = this.makeSatellite(0.7); g.add(sat2);
+    this.orbitSatellite(sat2, 2, -1.5, -6, 9.5, -0.16, 2.4, y);
+    g.add(new THREE.PointLight(0x93c5fd, 70, 55, 1.4));
+    this.addZone(g, y, 0, this.spaceWorld);
+  }
+
+  private buildMoonBase(y: number): void {
+    const g = new THREE.Group();
+    this.spaceFloor(g, 0x9ca3af);
+    for (let i = 0; i < 9; i++) { // craters
+      const crater = new THREE.Mesh(new THREE.TorusGeometry(0.5 + Math.random() * 0.9, 0.14, 8, 20), this.smat(0x6b7280, 0.05, 1));
+      crater.rotation.x = Math.PI / 2;
+      crater.position.set(-11 + Math.random() * 22, -3.1, -6 + Math.random() * 10);
+      g.add(crater);
+    }
+    const earth = new THREE.Mesh(new THREE.SphereGeometry(2.4, 28, 20),
+      new THREE.MeshPhysicalMaterial({ map: this.planetTexture('#2563eb', '#4ade80', '#f0f9ff'), roughness: 0.5, clearcoat: 0.6 }));
+    earth.position.set(6.5, 5.4, -13); g.add(earth);
+    this.spaceCrew.push((t) => { earth.rotation.y = t * 0.015; });
+    // Habitat dome + airlock
+    const dome = new THREE.Mesh(new THREE.SphereGeometry(2.5, 24, 14, 0, Math.PI * 2, 0, Math.PI / 2),
+      new THREE.MeshPhysicalMaterial({ color: 0xbae6fd, transparent: true, opacity: 0.38, roughness: 0.1, metalness: 0.2, clearcoat: 1, side: THREE.DoubleSide }));
+    dome.position.set(-3.4, -3.2, -4); g.add(dome);
+    const domeBase = new THREE.Mesh(new THREE.CylinderGeometry(2.55, 2.7, 0.5, 24), this.smat(0xd1d5db, 0.7, 0.4));
+    domeBase.position.set(-3.4, -3.1, -4); g.add(domeBase);
+    const warm = new THREE.PointLight(0xfbbf24, 26, 16, 1.6); warm.position.set(-3.4, -1.4, -4); g.add(warm);
+    // Lander
+    const lander = new THREE.Group(); lander.position.set(3.8, -2.4, -5);
+    const cabin = new THREE.Mesh(new THREE.BoxGeometry(1.5, 1, 1.5), this.smat(0xd4af37, 0.85, 0.35));
+    lander.add(cabin);
+    for (const [lx, lz] of [[-0.8, -0.8], [0.8, -0.8], [-0.8, 0.8], [0.8, 0.8]] as const) {
+      const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 1.1, 6), this.smat(0x9ca3af, 0.8, 0.4));
+      leg.position.set(lx, -0.7, lz); leg.rotation.z = lx > 0 ? 0.4 : -0.4; lander.add(leg);
+    }
+    g.add(lander);
+    // Flag (cloth ripple via scale/skew)
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 2.1, 6), this.smat(0xe5e7eb, 0.8, 0.3));
+    pole.position.set(0.8, -2.15, -2); g.add(pole);
+    const flag = new THREE.Mesh(new THREE.PlaneGeometry(1.05, 0.62),
+      new THREE.MeshStandardMaterial({ color: 0xf97316, side: THREE.DoubleSide, roughness: 0.8 }));
+    flag.position.set(1.36, -1.45, -2); g.add(flag);
+    this.spaceCrew.push((t) => { flag.rotation.y = Math.sin(t * 2.2) * 0.28; flag.scale.x = 1 + Math.sin(t * 3.1) * 0.05; });
+    const astro = this.makeAstronaut(1);
+    astro.position.set(1.8, -3.1, 0); g.add(astro);
+    this.spaceCrew.push((t) => {
+      const armR = astro.userData['armR'] as THREE.Group;
+      const helmet = astro.userData['helmet'] as THREE.Group;
+      astro.position.y = -3.1 + Math.abs(Math.sin(t * 1.4)) * 0.22; // moon-bounce hop
+      if (armR) armR.rotation.z = -2.3 + Math.sin(t * 3) * 0.4;
+      if (helmet) helmet.rotation.y = this.mouseX * 0.55;
+    });
+    g.add(new THREE.PointLight(0xe0e7ff, 55, 50, 1.4));
+    this.addZone(g, y, 0, this.spaceWorld);
+  }
+
+  private buildAsteroidBelt(y: number): void {
+    const g = new THREE.Group();
+    const rockMat = this.smat(0x78716c, 0.25, 0.95);
+    const rocks: THREE.Mesh[] = [];
+    for (let i = 0; i < 42; i++) {
+      const rock = new THREE.Mesh(new THREE.IcosahedronGeometry(0.3 + Math.random() * 1.15, 0), rockMat);
+      const ang = Math.random() * Math.PI * 2;
+      const rad = 4.5 + Math.random() * 9;
+      rock.position.set(Math.cos(ang) * rad, -2.5 + Math.random() * 7, -7 + Math.sin(ang) * rad * 0.55);
+      rock.rotation.set(Math.random() * 3, Math.random() * 3, Math.random() * 3);
+      g.add(rock); rocks.push(rock);
+    }
+    const big = new THREE.Mesh(new THREE.IcosahedronGeometry(2.1, 1), this.smat(0x57534e, 0.3, 0.9));
+    big.position.set(-5.5, 1.8, -6); g.add(big); rocks.push(big);
+    this.spaceCrew.push((t) => {
+      const pulse = this.pulseBoost(t);
+      rocks.forEach((rock, i) => {
+        rock.rotation.x += 0.0016 * (1 + (i % 5)) + pulse * 0.02;
+        rock.rotation.y += 0.0013 * (1 + (i % 3)) + pulse * 0.016;
+        rock.position.y += Math.sin(t * 0.5 + i * 1.7) * 0.0022 + pulse * 0.012; // zero-g scatter on click
+      });
+      big.rotation.y = t * 0.05;
+    });
+    const astro = this.makeAstronaut(1.05);
+    g.add(astro); this.floatAstronaut(astro, new THREE.Vector3(2.8, 0.8, 1.5), y, 4);
+    const sat = this.makeSatellite(0.85); g.add(sat);
+    this.orbitSatellite(sat, 0, 3.4, -5, 8.5, 0.18, 1.2, y);
+    g.add(new THREE.PointLight(0xa5b4fc, 60, 52, 1.4));
+    this.addZone(g, y, 0, this.spaceWorld);
+  }
+
+  private buildNebula(y: number): void {
+    const g = new THREE.Group();
+    const nebColors = [0x7c3aed, 0xec4899, 0x0ea5e9, 0xf59e0b];
+    nebColors.forEach((c, i) => {
+      const puff = new THREE.Mesh(new THREE.SphereGeometry(4.2 - i * 0.5, 20, 14),
+        new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: 0.075, depthWrite: false }));
+      puff.position.set(-6 + i * 3.6, 0.6 - i * 0.4, -11 - (i % 2) * 3);
+      puff.scale.set(1.5, 0.9, 1);
+      g.add(puff);
+      this.spaceCrew.push((t) => { puff.rotation.y = t * 0.03 * (i + 1); puff.scale.y = 0.9 + Math.sin(t * 0.4 + i) * 0.07; });
+    });
+    // UFO with tractor beam
+    const ufo = new THREE.Group(); ufo.position.set(2.5, 3, -5);
+    const saucer = new THREE.Mesh(new THREE.SphereGeometry(1.7, 24, 12), this.smat(0xc0c6ce, 0.9, 0.22));
+    saucer.scale.set(1, 0.32, 1); ufo.add(saucer);
+    const cockpit = new THREE.Mesh(new THREE.SphereGeometry(0.75, 18, 12),
+      new THREE.MeshPhysicalMaterial({ color: 0x67e8f9, transparent: true, opacity: 0.65, roughness: 0.1, clearcoat: 1 }));
+    cockpit.position.y = 0.3; cockpit.scale.y = 0.75; ufo.add(cockpit);
+    const pilot = this.makeAlien(0.55); pilot.position.y = 0.05; ufo.add(pilot);
+    for (let i = 0; i < 8; i++) {
+      const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.09, 8, 8), this.smat(0xfacc15, 0.2, 0.3, 0xfacc15, 2.2));
+      const ang = (i / 8) * Math.PI * 2;
+      bulb.position.set(Math.cos(ang) * 1.55, -0.12, Math.sin(ang) * 1.55);
+      ufo.add(bulb);
+    }
+    const beam = new THREE.Mesh(new THREE.ConeGeometry(1.5, 4.6, 20, 1, true),
+      new THREE.MeshBasicMaterial({ color: 0x67e8f9, transparent: true, opacity: 0.1, depthWrite: false, side: THREE.DoubleSide }));
+    beam.position.y = -2.5; ufo.add(beam);
+    g.add(ufo);
+    this.spaceCrew.push((t) => {
+      ufo.position.y = 3 + Math.sin(t * 0.8) * 0.35 + this.pulseBoost(t) * 0.8;
+      ufo.rotation.y = t * 0.25;
+      ufo.rotation.z = Math.sin(t * 0.6) * 0.07;
+      (beam.material as THREE.MeshBasicMaterial).opacity = 0.07 + Math.sin(t * 2.4) * 0.035 + this.nearFactor(y) * 0.05;
+    });
+    this.greetAlien(pilot, pilot.position.clone(), y, 2);
+    const astro = this.makeAstronaut(1);
+    g.add(astro); this.floatAstronaut(astro, new THREE.Vector3(-3.4, -0.6, 1), y, 7);
+    g.add(new THREE.PointLight(0xc084fc, 75, 55, 1.5));
+    this.addZone(g, y, 0, this.spaceWorld);
+  }
+
+  private buildAlienPlanet(y: number): void {
+    const g = new THREE.Group();
+    this.spaceFloor(g, 0x4c1d95, 0x2e1065);
+    // Crystal flora
+    for (let i = 0; i < 12; i++) {
+      const hue = [0x22d3ee, 0xe879f9, 0xa3e635][i % 3];
+      const crystal = new THREE.Mesh(new THREE.OctahedronGeometry(0.26 + Math.random() * 0.4),
+        new THREE.MeshPhysicalMaterial({ color: hue, emissive: hue, emissiveIntensity: 0.7, roughness: 0.15, clearcoat: 1 }));
+      crystal.position.set(-11 + Math.random() * 22, -2.8 + Math.random() * 0.3, -7 + Math.random() * 9);
+      g.add(crystal);
+      this.spaceCrew.push((t) => { crystal.rotation.y = t * (0.4 + (i % 4) * 0.15); });
+    }
+    // Ringed planet in the sky
+    const planet = new THREE.Mesh(new THREE.SphereGeometry(3.1, 30, 22),
+      new THREE.MeshPhysicalMaterial({ map: this.planetTexture('#7c3aed', '#db2777', '#f0abfc'), roughness: 0.5, clearcoat: 0.6 }));
+    planet.position.set(-6.5, 5.8, -14); g.add(planet);
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(4.4, 0.16, 8, 48),
+      new THREE.MeshStandardMaterial({ color: 0xf0abfc, transparent: true, opacity: 0.6, roughness: 0.4, metalness: 0.4 }));
+    ring.position.copy(planet.position); ring.rotation.x = Math.PI / 2.5; g.add(ring);
+    this.spaceCrew.push((t) => { planet.rotation.y = t * 0.018; ring.rotation.z = t * 0.05; });
+    // The locals — they wave and watch your cursor
+    const spots: [number, number, number, number][] = [[-2.2, -3.1, 1.5, 1.05], [0.4, -3.1, 2.2, 0.8], [2.6, -3.1, 1.2, 0.62]];
+    spots.forEach(([x, yy, z, s], i) => {
+      const alien = this.makeAlien(s, [0x86efac, 0x67e8f9, 0xf0abfc][i]);
+      g.add(alien);
+      this.greetAlien(alien, new THREE.Vector3(x, yy, z), y, i * 2.1);
+      alien.position.set(x, yy, z);
+    });
+    const astro = this.makeAstronaut(1);
+    g.add(astro); this.floatAstronaut(astro, new THREE.Vector3(4.6, 0.4, 0.5), y, 9);
+    g.add(new THREE.PointLight(0xd8b4fe, 70, 55, 1.5));
+    this.addZone(g, y, 0, this.spaceWorld);
+  }
+
+  private buildWormhole(y: number): void {
+    const g = new THREE.Group();
+    const portal = new THREE.Mesh(new THREE.CircleGeometry(3.4, 40),
+      new THREE.MeshBasicMaterial({ color: 0xa78bfa, transparent: true, opacity: 0.3, side: THREE.DoubleSide }));
+    portal.position.set(0, 0.6, -8); g.add(portal);
+    const rings: THREE.Mesh[] = [];
+    for (let i = 0; i < 4; i++) {
+      const ringM = new THREE.Mesh(new THREE.TorusGeometry(3.7 + i * 0.55, 0.07, 8, 44),
+        new THREE.MeshStandardMaterial({ color: [0x8b5cf6, 0x22d3ee, 0xec4899, 0xfbbf24][i], emissive: [0x8b5cf6, 0x22d3ee, 0xec4899, 0xfbbf24][i], emissiveIntensity: 1.4, roughness: 0.3, metalness: 0.4 }));
+      ringM.position.set(0, 0.6, -8 - i * 0.7);
+      g.add(ringM); rings.push(ringM);
+    }
+    this.spaceCrew.push((t) => {
+      rings.forEach((ringM, i) => {
+        ringM.rotation.z = t * (0.5 + i * 0.22) * (i % 2 ? -1 : 1);
+        const s = 1 + Math.sin(t * 2 + i) * 0.02 + this.pulseBoost(t) * 0.06;
+        ringM.scale.setScalar(s);
+      });
+      (portal.material as THREE.MeshBasicMaterial).opacity = 0.24 + Math.sin(t * 2.6) * 0.07 + this.pulseBoost(t) * 0.12;
+    });
+    const astro = this.makeAstronaut(1.1);
+    g.add(astro); this.floatAstronaut(astro, new THREE.Vector3(-2.6, 0.8, -1), y, 12);
+    const sat = this.makeSatellite(0.8); g.add(sat);
+    this.orbitSatellite(sat, 3.4, 2.6, -4, 5.5, 0.3, 0.6, y);
+    g.add(new THREE.PointLight(0xa78bfa, 85, 60, 1.6));
+    this.addZone(g, y, 0, this.spaceWorld);
+  }
+
   // ══ OCEAN THEME ═══════════════════════════════════════════════════════
   /** The Ocean: same dive, living water — reef → kelp → deep sea → abyss → sunlight. */
   private buildOcean(): void {
@@ -2201,14 +2630,15 @@ export class JourneyCanvasComponent implements AfterViewInit, OnDestroy {
       underground: { dawn: 0x140b06, day: 0x0b0705, dusk: 0x170906, night: 0x040202 },
       ocean: { dawn: 0x0a3a4a, day: 0x075a7d, dusk: 0x082f4e, night: 0x010a18 },
       forest: { dawn: 0x27390f, day: 0x173d20, dusk: 0x1d2b0d, night: 0x020805 },
+      space: { dawn: 0x070618, day: 0x050412, dusk: 0x09051a, night: 0x010108 },
     };
-    const density: Record<string, number> = { underground: 0.0155, ocean: 0.011, forest: 0.0125 };
+    const density: Record<string, number> = { underground: 0.0155, ocean: 0.011, forest: 0.0125, space: 0.0075 };
     const sunColor: Record<string, number> = { dawn: 0xffb37a, day: 0xfff2d4, dusk: 0xff8a5c, night: 0x7aa2ff };
     const sunI: Record<string, number> = { dawn: 0.95, day: 1.45, dusk: 0.8, night: 0.28 };
     const ambI: Record<string, number> = { dawn: 0.55, day: 0.78, dusk: 0.48, night: 0.3 };
     const ambColor: Record<string, number> = { dawn: 0xffd9b0, day: 0xffffff, dusk: 0xffc4a3, night: 0x5f7fd9 };
-    // Underground is deep below the sky — phase only whispers down there.
-    const phaseWeight = theme === 'underground' ? 0.35 : 1;
+    // Underground is deep below the sky, and space is beyond it — phase only whispers there.
+    const phaseWeight = theme === 'underground' || theme === 'space' ? 0.3 : 1;
 
     if (this.scene?.fog instanceof THREE.FogExp2) {
       this.scene.fog.color.set(fogByTheme[theme]?.[phase] ?? 0x0b0705);
@@ -2225,7 +2655,7 @@ export class JourneyCanvasComponent implements AfterViewInit, OnDestroy {
     // Your lamp matters most after dark.
     this.lampMul = phase === 'night' ? 1.35 : phase === 'day' ? 0.72 : 1;
     if (this.headlamp) {
-      this.headlamp.color.set(theme === 'ocean' ? 0x7dd3fc : theme === 'forest' ? 0xffe9b8 : 0xffc98a);
+      this.headlamp.color.set(theme === 'ocean' ? 0x7dd3fc : theme === 'forest' ? 0xffe9b8 : theme === 'space' ? 0xc4b5fd : 0xffc98a);
     }
   }
 
@@ -2248,7 +2678,7 @@ export class JourneyCanvasComponent implements AfterViewInit, OnDestroy {
     );
     this.camera.lookAt(this.mouseX * 2.4, camY - 5.4 + this.mouseY * -0.7, -2);
     if (this.headlamp) {
-      const base = (this.themeService.theme() === 'ocean' ? 55 : this.themeService.theme() === 'forest' ? 66 : 74) * this.lampMul;
+      const base = (this.themeService.theme() === 'ocean' ? 55 : this.themeService.theme() === 'forest' ? 66 : this.themeService.theme() === 'space' ? 58 : 74) * this.lampMul;
       this.headlamp.intensity = base + Math.sin(t * 2.1) * 7; // lamp flicker
     }
 
@@ -2272,6 +2702,7 @@ export class JourneyCanvasComponent implements AfterViewInit, OnDestroy {
       if (this.undergroundWorld) this.undergroundWorld.visible = theme === 'underground';
       if (this.oceanWorld) this.oceanWorld.visible = theme === 'ocean';
       if (this.forestWorld) this.forestWorld.visible = theme === 'forest';
+      if (this.spaceWorld) this.spaceWorld.visible = theme === 'space';
       this.applyEnvironment(theme, phase);
     }
     if (theme === 'ocean') {
@@ -2279,6 +2710,9 @@ export class JourneyCanvasComponent implements AfterViewInit, OnDestroy {
     }
     if (theme === 'forest') {
       for (const act of this.wildlife) act(t);
+    }
+    if (theme === 'space') {
+      for (const act of this.spaceCrew) act(t);
     }
     this.camYCurrent = camY;
 

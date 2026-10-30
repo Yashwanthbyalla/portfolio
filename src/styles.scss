@@ -413,6 +413,54 @@ html[data-theme='forest'] .gate-label { color: #a3e635 !important; }
 html[data-theme='forest'] .filter-active { background: rgba(21,128,61,0.28) !important; border-color: rgba(134,239,172,0.5) !important; }
 html[data-theme='forest'] input:focus, html[data-theme='forest'] textarea:focus { border-color: rgba(134,239,172,0.55) !important; }
 
+/* ═══ SPACE THEME SKIN (html[data-theme='space']) ═══════════════════════ */
+html[data-theme='space'] body {
+  background-image:
+    radial-gradient(ellipse 90% 55% at 50% 0%, rgba(124,58,237,0.22) 0%, transparent 65%),
+    radial-gradient(ellipse 55% 40% at 88% 78%, rgba(34,211,238,0.1) 0%, transparent 60%),
+    radial-gradient(ellipse 45% 35% at 10% 60%, rgba(236,72,153,0.08) 0%, transparent 60%),
+    linear-gradient(to bottom, #070414 0%, #04030d 48%, #010108 100%);
+}
+html[data-theme='space'] .card {
+  background: rgba(16, 13, 38, 0.66);
+  border-color: rgba(167,139,250,0.18);
+}
+html[data-theme='space'] .card:hover {
+  border-color: rgba(139,92,246,0.5);
+  box-shadow: 0 16px 48px rgba(0,0,0,0.55), 0 0 30px rgba(124,58,237,0.25), inset 0 1px 0 rgba(255,255,255,0.08);
+}
+html[data-theme='space'] .grad { background-image: linear-gradient(to right, #a78bfa, #22d3ee, #f0abfc) !important; }
+html[data-theme='space'] .section-eyebrow { color: #c4b5fd !important; }
+html[data-theme='space'] .divider { background-image: linear-gradient(to right, #7c3aed, #22d3ee) !important; }
+html[data-theme='space'] .btn-primary {
+  background-image: linear-gradient(to right, #6d28d9, #0891b2) !important;
+  box-shadow: 0 0 22px rgba(124,58,237,0.4);
+}
+html[data-theme='space'] .btn-primary:hover { background-image: linear-gradient(to right, #7c3aed, #06b6d4) !important; }
+html[data-theme='space'] .btn-ghost:hover { border-color: rgba(196,181,253,0.5) !important; }
+html[data-theme='space'] .tag {
+  background: rgba(109,40,217,0.2) !important; color: #ddd6fe !important; border-color: rgba(167,139,250,0.32) !important;
+}
+html[data-theme='space'] .tag-yellow {
+  background: rgba(202,138,4,0.14) !important; color: #fde68a !important; border-color: rgba(250,204,21,0.3) !important;
+}
+html[data-theme='space'] .ambient-blob-1 { background: radial-gradient(circle, rgba(124,58,237,0.34), transparent 70%); }
+html[data-theme='space'] .ambient-blob-2 { background: radial-gradient(circle, rgba(34,211,238,0.22), transparent 70%); }
+html[data-theme='space'] .ambient-blob-3 { background: radial-gradient(circle, rgba(236,72,153,0.2), transparent 70%); }
+html[data-theme='space'] .scroll-progress { background: linear-gradient(90deg, #7c3aed, #22d3ee, #f0abfc) !important; box-shadow: 0 0 10px rgba(139,92,246,0.8) !important; }
+html[data-theme='space'] .logo-mark { background: linear-gradient(135deg, #6d28d9, #22d3ee) !important; box-shadow: 0 0 16px rgba(124,58,237,0.6) !important; }
+html[data-theme='space'] .nav-link.active { background: rgba(109,40,217,0.22) !important; }
+html[data-theme='space'] footer::before { background: linear-gradient(90deg, transparent, rgba(139,92,246,0.65), rgba(34,211,238,0.65), transparent); background-size: 200% 100%; }
+html[data-theme='space'] ::selection { background: rgba(109,40,217,0.55); }
+html[data-theme='space'] ::-webkit-scrollbar-thumb { background: rgba(109,40,217,0.8) !important; }
+html[data-theme='space'] .hud-fill,
+html[data-theme='space'] .hud-mobile-fill { background: linear-gradient(to bottom, #7c3aed, #22d3ee, #f0abfc) !important; }
+html[data-theme='space'] .hud-dot.on { background: rgba(109,40,217,0.45) !important; border-color: #c4b5fd !important; box-shadow: 0 0 14px rgba(139,92,246,0.85) !important; }
+html[data-theme='space'] .gate-label { color: #a78bfa !important; }
+html[data-theme='space'] .filter-active { background: rgba(109,40,217,0.3) !important; border-color: rgba(196,181,253,0.5) !important; }
+html[data-theme='space'] input:focus, html[data-theme='space'] textarea:focus { border-color: rgba(196,181,253,0.55) !important; }
+html[data-theme='space'] .world-btn-map { color: #c4b5fd; }
+
 /* ═══ AUTO DAY/NIGHT (html[data-dayphase]) — applies across all worlds ═══ */
 /* Dawn: warm golden wash */
 html[data-dayphase='dawn'] .card { border-color: rgba(251,191,36,0.22); }

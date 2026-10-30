@@ -100,7 +100,16 @@ export class JourneyHudComponent {
   private readonly themeService = inject(ThemeService);
 
   readonly chapters = computed<Chapter[]>(() =>
-    this.themeService.theme() === 'forest'
+    this.themeService.theme() === 'space'
+      ? [
+          { id: 'home', depth: '0m', label: 'Low Orbit', icon: '🛰️' },
+          { id: 'about', depth: '300m', label: 'Moon Base', icon: '🌕' },
+          { id: 'experience', depth: '600m', label: 'Asteroid Belt', icon: '☄️' },
+          { id: 'skills', depth: '900m', label: 'Nebula Drift', icon: '🌌' },
+          { id: 'projects', depth: '1200m', label: 'Alien Planet', icon: '👽' },
+          { id: 'contact', depth: '1500m', label: 'Wormhole Exit', icon: '🌀' },
+        ]
+      : this.themeService.theme() === 'forest'
       ? [
           { id: 'home', depth: '0m', label: 'Canopy Gate', icon: '🌲' },
           { id: 'about', depth: '300m', label: 'Meadow Clearing', icon: '🦌' },

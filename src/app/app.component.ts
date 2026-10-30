@@ -45,35 +45,35 @@ import { inject } from '@angular/core';
 
       <div class="chapter-gate" aria-hidden="true">
         <span class="gate-line"></span>
-        <span class="gate-label">{{ themeService.theme() === 'forest' ? '🦌 Trekking · 300m — entering the Meadow Clearing' : themeService.theme() === 'ocean' ? '🪸 Diving · 300m — entering the Coral Reef' : '⛏ Descending · 300m — entering the Scanner Core' }}</span>
+        <span class="gate-label">{{ themeService.theme() === 'space' ? '🌕 Flying · 300m — landing at Moon Base' : themeService.theme() === 'forest' ? '🦌 Trekking · 300m — entering the Meadow Clearing' : themeService.theme() === 'ocean' ? '🪸 Diving · 300m — entering the Coral Reef' : '⛏ Descending · 300m — entering the Scanner Core' }}</span>
         <span class="gate-chevrons"><i></i><i></i><i></i></span>
       </div>
       <app-about />
 
       <div class="chapter-gate" aria-hidden="true">
         <span class="gate-line"></span>
-        <span class="gate-label">{{ themeService.theme() === 'forest' ? '🐘 Trekking · 600m — entering the Elephant Grove' : themeService.theme() === 'ocean' ? '🌿 Diving · 600m — entering the Kelp Forest' : '🕰️ Descending · 600m — entering the Timeline Cavern' }}</span>
+        <span class="gate-label">{{ themeService.theme() === 'space' ? '☄️ Flying · 600m — entering the Asteroid Belt · hold on' : themeService.theme() === 'forest' ? '🐘 Trekking · 600m — entering the Elephant Grove' : themeService.theme() === 'ocean' ? '🌿 Diving · 600m — entering the Kelp Forest' : '🕰️ Descending · 600m — entering the Timeline Cavern' }}</span>
         <span class="gate-chevrons"><i></i><i></i><i></i></span>
       </div>
       <app-experience />
 
       <div class="chapter-gate" aria-hidden="true">
         <span class="gate-line"></span>
-        <span class="gate-label">{{ themeService.theme() === 'forest' ? '🐅 Trekking · 900m — entering Predator Territory · tread quietly' : themeService.theme() === 'ocean' ? '🪼 Diving · 900m — entering the Deep Sea' : '💎 Descending · 900m — entering the Crystal Cave' }}</span>
+        <span class="gate-label">{{ themeService.theme() === 'space' ? '🌌 Flying · 900m — drifting into the Nebula' : themeService.theme() === 'forest' ? '🐅 Trekking · 900m — entering Predator Territory · tread quietly' : themeService.theme() === 'ocean' ? '🪼 Diving · 900m — entering the Deep Sea' : '💎 Descending · 900m — entering the Crystal Cave' }}</span>
         <span class="gate-chevrons"><i></i><i></i><i></i></span>
       </div>
       <app-skills />
 
       <div class="chapter-gate" aria-hidden="true">
         <span class="gate-line"></span>
-        <span class="gate-label">{{ themeService.theme() === 'forest' ? '🦉 Trekking · 1200m — entering the Nocturnal Ruins' : themeService.theme() === 'ocean' ? '🐋 Diving · 1200m — entering the Abyss' : '🏺 Descending · 1200m — entering the Artifact Vault' }}</span>
+        <span class="gate-label">{{ themeService.theme() === 'space' ? '👽 Flying · 1200m — approaching the Alien Planet · they know you are coming' : themeService.theme() === 'forest' ? '🦉 Trekking · 1200m — entering the Nocturnal Ruins' : themeService.theme() === 'ocean' ? '🐋 Diving · 1200m — entering the Abyss' : '🏺 Descending · 1200m — entering the Artifact Vault' }}</span>
         <span class="gate-chevrons"><i></i><i></i><i></i></span>
       </div>
       <app-projects />
 
       <div class="chapter-gate gate-exit" aria-hidden="true">
         <span class="gate-line"></span>
-        <span class="gate-label">{{ themeService.theme() === 'forest' ? '🌅 1500m — the Sunrise Clearing · emerging from the forest' : themeService.theme() === 'ocean' ? '☀️ 1500m — the Sunlight Exit · back to the surface' : '🚪 1500m — the Exit Portal · return to the surface' }}</span>
+        <span class="gate-label">{{ themeService.theme() === 'space' ? '🌀 1500m — the Wormhole Exit · back to Earth' : themeService.theme() === 'forest' ? '🌅 1500m — the Sunrise Clearing · emerging from the forest' : themeService.theme() === 'ocean' ? '☀️ 1500m — the Sunlight Exit · back to the surface' : '🚪 1500m — the Exit Portal · return to the surface' }}</span>
         <span class="gate-chevrons gate-up"><i></i><i></i><i></i></span>
       </div>
       <app-contact />

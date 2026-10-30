@@ -113,6 +113,8 @@ export class AmbientAudioService {
         return [[48, 52, 55, 59], [45, 48, 52, 55], [41, 45, 48, 52], [43, 47, 50, 53]];
       case 'forest': // G · Em · C · D — warm and hopeful
         return [[55, 59, 62], [52, 55, 59], [48, 52, 55], [50, 54, 57]];
+      case 'space': // Am · F · C · G — weightless, cinematic
+        return [[45, 48, 52, 55], [41, 45, 48, 53], [36, 43, 48, 52], [43, 47, 50, 55]];
       default: // Dm · B♭ · A(sus) · C — deep, cavernous (one octave down in playChord)
         return [[50, 53, 57], [46, 50, 53], [45, 52, 57], [48, 52, 55]];
     }
@@ -122,6 +124,7 @@ export class AmbientAudioService {
     switch (theme) {
       case 'ocean': return [60, 62, 64, 67, 69, 72, 76]; // C major pentatonic-ish
       case 'forest': return [67, 69, 71, 74, 76, 79, 83]; // G major pentatonic, brighter
+      case 'space': return [57, 60, 62, 64, 67, 69, 72]; // A minor — floating, sparse
       default: return [50, 53, 55, 57, 60, 62]; // D minor, low
     }
   }
@@ -181,9 +184,9 @@ export class AmbientAudioService {
     const night = this.themeService.phase() === 'night';
     const filter = ctx.createBiquadFilter();
     filter.type = 'lowpass';
-    filter.frequency.value = theme === 'ocean' ? 460 : theme === 'forest' ? 950 : 220;
+    filter.frequency.value = theme === 'ocean' ? 460 : theme === 'forest' ? 950 : theme === 'space' ? 160 : 220;
     this.bedGainNode = ctx.createGain();
-    const target = theme === 'ocean' ? (night ? 0.11 : 0.15) : theme === 'forest' ? (night ? 0.07 : 0.095) : 0.035;
+    const target = theme === 'ocean' ? (night ? 0.11 : 0.15) : theme === 'forest' ? (night ? 0.07 : 0.095) : theme === 'space' ? 0.022 : 0.035;
     this.bedGainNode.gain.setValueAtTime(0, ctx.currentTime);
     this.bedGainNode.gain.linearRampToValueAtTime(target, ctx.currentTime + 2.5);
     this.bedSource = ctx.createBufferSource();
@@ -249,7 +252,13 @@ export class AmbientAudioService {
     const phase = this.themeService.phase();
     const r = Math.random();
 
-    if (theme === 'underground') {
+    if (theme === 'space') {
+      // Space is near-silent: suit breathing, radio checks, satellite passes lead.
+      if (r < 0.34) { this.rustle(0.028); window.setTimeout(() => this.rustle(0.02), 650); } // astronaut breathing: soft in… out through the suit mic
+      else if (r < 0.48) { this.sfx(1040, 1040, 0.09, 0.075); this.sfx(1040, 1040, 0.09, 0.06, 'sine', false, 0.16); this.sfx(1560, 1560, 0.12, 0.07, 'sine', false, 0.34); } // radio check: beep-beep… beep
+      else if (r < 0.56) this.sfx(880 + Math.random() * 220, 660, 1.6, 0.045, 'sine', true); // distant satellite / alien signal sweep
+      else if (r < 0.62) this.sfx(196, 147, 2.4, 0.05, 'sine', true); // deep ship hum swell
+    } else if (theme === 'underground') {
       if (r < 0.5) this.sfx(1250 + Math.random() * 450, 640, 0.4, 0.16, 'sine', true); // cave drip — the Mine's signature
       else if (r < 0.6) this.sfx(85 + Math.random() * 50, 42, 0.55, 0.09, 'triangle', true); // distant rock settling
       else if (r < 0.66) this.rustle(0.02); // air drifting through the shaft
